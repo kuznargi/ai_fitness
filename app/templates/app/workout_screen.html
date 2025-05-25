@@ -1,0 +1,1033 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренировка</title>
+  
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding-top: 10px; /* Reduced padding slightly */
+            padding-bottom: 10px;
+        }
+        .workout-container {
+            background-color: #fff;
+            padding: 15px; /* Reduced padding slightly */
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 700px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        #exercise-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+        #exercise-name {
+            font-size: 22px; /* Adjusted size */
+            font-weight: bold;
+            color: #5cb85c;
+            margin: 0;
+        }
+        #exercise-timer-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #337ab7;
+        }
+        #rep-counter-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #337ab7;
+        }
+        .video-container { /* Adjusted for flex layout */
+            position: relative;
+            width: 45%; /* Adjust width as needed */
+            /* aspect-ratio: 16 / 9; */ /* Keep if needed */
+            max-width: none; /* Override previous max-width as it's now a flex item */
+            /* margin: auto; */ /* Remove auto margin for flex item */
+            margin-bottom: 0; /* Handled by parent container */
+        }
+        #webcam-video, #output-canvas {
+            display: block; /* Remove extra space below canvas/video */
+            width: 100%;
+            height: auto; /* Adjust height automatically */
+            border-radius: 4px;
+        }
+        #output-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #video-placeholder { /* For initial message */
+            width: 100%;
+            height: 300px; /* Adjust as needed */
+            background-color: #ddd;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            border-radius: 4px;
+        }
+         #webcam-video.hidden, #output-canvas.hidden, #video-placeholder.hidden {
+            display: none;
+        }
+
+        #ai-feedback-area {
+            min-height: 40px; /* Reduced height slightly */
+            padding: 8px;
+            border: 1px dashed #aaa;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            text-align: left; /* Feedback text aligned left */
+            font-size: 0.9em;
+        }
+        .controls button {
+            background-color: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            margin: 5px;
+        }
+        .controls button:hover {
+            background-color: #4cae4c;
+        }
+        .controls button.stop {
+            background-color: #d9534f;
+        }
+        .controls button.stop:hover {
+            background-color: #c9302c;
+        }
+        .controls button.pause { /* Style for the Pause button */
+            background-color: #f0ad4e; /* Orange color for pause */
+        }
+        .controls button.pause:hover {
+            background-color: #ec971f;
+        }
+        .controls button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .user-data {
+            margin-top: 15px;
+            padding: 8px;
+            background-color: #e9e9e9;
+            border-radius: 4px;
+            text-align: left;
+            font-size: 0.85em;
+        }
+        .user-data p {
+            margin: 4px 0;
+        }
+        .training-area-container { /* New container for side-by-side video and instructions */
+            display: flex;
+            justify-content: space-around; /* Adjust as needed */
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        #instruction-video-placeholder { /* Placeholder for instruction video */
+            width: 45%; /* Adjust width as needed */
+            height: 300px; /* Match video placeholder height or adjust */
+            background-color: #e0e0e0; /* Will be covered by video or can be removed */
+            border: 1px solid #ccc;
+            /* display: flex; */ /* No longer needed for video element */
+            /* align-items: center; */ /* No longer needed for video element */
+            /* justify-content: center; */ /* No longer needed for video element */
+            /* font-style: italic; */ /* No longer needed for video element */
+            border-radius: 4px;
+            /* text-align: center; */ /* No longer needed for video element */
+            overflow: hidden; /* Ensures video corners are rounded if video itself isn't */
+        }
+    </style>
+</head>
+<body>
+    <div class="workout-container">
+        <h1>Ваша Тренировка</h1>
+        
+        <div id="exercise-info">
+            <div id="exercise-name">Загрузка упражнения...</div>
+            <div id="exercise-timer-display">Таймер: 00:00</div>
+            <div id="rep-counter-display">Повторы: 0</div>
+        </div>
+
+        <div class="training-area-container">
+            <div id="instruction-video-placeholder">
+                <video id="instruction-video" width="100%" height="100%" controls loop>
+                    <source src="{% static 'videos/squat_instruction.mp4' %}" type="video/mp4">
+                    Ваш браузер не поддерживает тег video.
+                </video>
+            </div>
+            <div class="video-container">
+                <div id="video-placeholder">(Изображение с камеры появится здесь)</div>
+                <video id="webcam-video" class="hidden" playsinline></video> <!-- playsinline for iOS -->
+                <canvas id="output-canvas" class="hidden"></canvas>
+            </div>
+        </div>
+
+        <div id="ai-feedback-area">
+            Нажмите "Начать тренировку" для старта.
+        </div>
+
+        <div class="controls">
+            <button id="start-workout">Начать тренировку</button>
+            <button id="pause-workout" class="pause" disabled>Пауза</button>
+            <button id="stop-workout" class="stop" disabled>Стоп</button>
+        </div>
+
+        <div class="user-data" id="user-selected-data">
+            <h2>Ваши настройки:</h2>
+            <p><strong>Цель:</strong> <span id="data-goal"></span></p>
+            <p><strong>Уровень подготовки:</strong> <span id="data-level"></span></p>
+            <p><strong>Заметки о здоровье:</strong> <span id="data-health"></span></p>
+            <!-- <p><strong>Дни тренировок:</strong> <span id="data-days"></span></p> --> <!-- Старое поле "Дни тренировок" -->
+            <p><strong>Частота тренировок:</strong> <span id="data-frequency"></span></p> <!-- Новое поле -->
+            <p><strong>Предпочтения в упражнениях:</strong> <span id="data-prefs"></span></p> <!-- Новое поле -->
+        </div>
+    </div>
+
+    <script type="module">
+        // ----- DOM Elements -----
+        const videoElement = document.getElementById('webcam-video');
+        const canvasElement = document.getElementById('output-canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const aiFeedbackArea = document.getElementById('ai-feedback-area');
+        const repCounterDisplay = document.getElementById('rep-counter-display');
+        const mainControlButton = document.getElementById('start-workout'); 
+        const pauseButton = document.getElementById('pause-workout');
+        const stopButton = document.getElementById('stop-workout');
+        const videoPlaceholder = document.getElementById('video-placeholder');
+        const exerciseTimerDisplay = document.getElementById('exercise-timer-display');
+        const exerciseNameEl = document.getElementById('exercise-name');
+        const instructionVideo = document.getElementById('instruction-video');
+        const userDataDisplay = document.getElementById('user-selected-data');
+
+        // ----- Speech Synthesis -----
+        const synth = window.speechSynthesis;
+        let voices = [];
+        function populateVoiceList() { voices = synth.getVoices(); }
+        populateVoiceList();
+        if (synth.onvoiceschanged !== undefined) { synth.onvoiceschanged = populateVoiceList; }
+
+        // ----- MediaPipe Pose -----
+        let mediaPipePose = null; 
+        let camera = null;      
+
+        // ----- Workout Plan (Sample) -----
+        const workoutPlan = [
+            {
+                name_display: "Бег на месте", 
+                name_internal: "running_in_place", 
+                type: 'timed', 
+                duration_seconds: 30, 
+                instruction_video_src: "{% static 'videos/running_in_place.mp4' %}", 
+                voice_prompt_start: "Начинаем с бега на месте...", 
+                analysis_function_name: 'analyzeGenericTimedExercise',
+                category: 'Кардио'
+            },
+            {
+                name_display: "Прыжки Джампинг Джек", 
+                name_internal: "jumping_jacks", 
+                type: 'timed', 
+                duration_seconds: 30, 
+                instruction_video_src: "{% static 'videos/jumping_jacks.mp4' %}", 
+                voice_prompt_start: "Теперь Джампинг Джеки...", 
+                analysis_function_name: 'analyzeGenericTimedExercise',
+                category: 'Кардио'
+            },
+            {
+                name_display: "Приседания", 
+                name_internal: "squats", 
+                type: 'rep_based', 
+                target_reps: 5, 
+                instruction_video_src: "{% static 'videos/squat_instruction.mp4' %}", 
+                voice_prompt_start: "Приседания, 5 раз...", 
+                analysis_function_name: 'analyzeSquat',
+                category: 'Силовые'
+            },
+            // { name_display: "Отжимания", name_internal: "pushups", type: 'rep_based', target_reps: 3, instruction_video_src: "{% static 'videos/pushup_instruction.mp4' %}", voice_prompt_start: "Отжимания, 3 раза...", analysis_function_name: 'analyzePushups', category: 'Силовые' },
+            {
+                name_display: "Планка",
+                name_internal: "plank",
+                type: 'timed',
+                duration_seconds: 30,
+                instruction_video_src: "{% static 'videos/plank_instruction.mp4' %}",
+                voice_prompt_start: "Теперь планка, держите 30 секунд.",
+                analysis_function_name: 'analyzePlank',
+                category: 'Силовые'
+            }
+        ];
+
+        const analysisFunctions = { 
+            'analyzeGenericTimedExercise': analyzeGenericTimedExercise,
+            'analyzeSquat': analyzeSquat
+            // 'analyzePushups': analyzePushups 
+        };
+        
+        // ----- Global Workout State -----
+        let currentExerciseAnalysisFunction = null; 
+        let currentExerciseIndex = -1;
+        let isWorkoutActive = false;    
+        let isExercisePaused = false;   
+        let repCount = 0;
+        let inRepCycle = false; 
+        let lastSpokenMessage = "";
+        let lastSpokenTime = 0;
+        const MIN_TIME_BETWEEN_SAME_NON_FORCED_MESSAGE = 3000;
+        const MIN_TIME_BETWEEN_FORCED_MESSAGE = 1500;
+        let lastSpokenMessageWasRepCount = false;
+        let exerciseTargetMet = false;
+        let overallWorkoutStartTime = null; 
+        let exerciseCountdownInterval = null;
+        let exerciseCountdownSecondsRemaining = 0;
+        let pauseSessionStartTime = null; 
+        let totalWorkoutPausedTime = 0;
+        let lastLandmarks = null; 
+        let inactivityCounter = 0; 
+        const INACTIVITY_THRESHOLD_FRAMES = 75; // Approx 2.5 seconds at 30fps
+        let repQualityFlags = {}; // To store if errors occurred in the current rep cycle
+        let currentUtterance = null; // Added to keep track of the current speech utterance
+        let lastErrorKeySpokenTimestamps = {}; // NEW: Tracks when specific error *keys* were last spoken
+        const ERROR_KEY_REANNOUNCE_COOLDOWN = 4000; // NEW: Cooldown in ms for re-announcing the same error type
+
+        // ----- Constants & MP_LANDMARKS -----
+        const KNEE_ANGLE_STANDING = 165; // Slightly higher for more clear "standing"
+        const KNEE_ANGLE_BENT_ENOUGH_FOR_SQUAT = 130; 
+        const KNEE_ANGLE_VERY_DEEP = 80; // Adjusted for squat depth
+        const HIP_DIP_BELOW_KNEE_THRESHOLD_Y = 1.02; // Hips Y should be > Knee Y * this (Y is inverted)
+        const MIN_VISIBILITY = 0.7; // Stricter visibility
+        const MP_LANDMARKS = {
+            NOSE: 0, LEFT_EYE_INNER: 1, LEFT_EYE: 2, LEFT_EYE_OUTER: 3, RIGHT_EYE_INNER: 4, RIGHT_EYE: 5, RIGHT_EYE_OUTER: 6,
+            LEFT_EAR: 7, RIGHT_EAR: 8, MOUTH_LEFT: 9, MOUTH_RIGHT: 10,
+            LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12, LEFT_ELBOW: 13, RIGHT_ELBOW: 14, LEFT_WRIST: 15, RIGHT_WRIST: 16,
+            LEFT_PINKY: 17, RIGHT_PINKY: 18, LEFT_INDEX: 19, RIGHT_INDEX: 20, LEFT_THUMB: 21, RIGHT_THUMB: 22,
+            LEFT_HIP: 23, RIGHT_HIP: 24, LEFT_KNEE: 25, RIGHT_KNEE: 26, LEFT_ANKLE: 27, RIGHT_ANKLE: 28,
+            LEFT_HEEL: 29, RIGHT_HEEL: 30, LEFT_FOOT_INDEX: 31, RIGHT_FOOT_INDEX: 32
+        };
+
+        // ----- Utility Functions -----
+        function calculateAngle(p1, p2, p3, checkVisibility = true) { 
+            if (checkVisibility && (!p1 || !p2 || !p3 || p1.visibility < MIN_VISIBILITY || p2.visibility < MIN_VISIBILITY || p3.visibility < MIN_VISIBILITY)) {
+                return null; 
+            }
+            const radians = Math.atan2(p3.y - p2.y, p3.x - p2.x) - Math.atan2(p1.y - p2.y, p1.x - p2.x);
+            let angle = Math.abs(radians * 180.0 / Math.PI);
+            if (angle > 180.0) {
+                angle = 360.0 - angle;
+            }
+            return angle;
+        }
+        function getMidPoint(p1, p2, checkVisibility = true) {
+            if (checkVisibility && (!p1 || !p2 || p1.visibility < MIN_VISIBILITY || p2.visibility < MIN_VISIBILITY)) return null;
+            if (!p1 || !p2) return null; // Still check even if visibility check is off, for safety
+            return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2, z: (p1.z + p2.z) / 2, visibility: (p1.visibility + p2.visibility) / 2 };
+        }
+        function getDistance(p1, p2, checkVisibility = true) {
+            if (checkVisibility && (!p1 || !p2 || p1.visibility < MIN_VISIBILITY || p2.visibility < MIN_VISIBILITY)) return null;
+            if (!p1 || !p2) return null;
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
+        }
+        function formatDuration(ms) { 
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        function formatSecondsAsMMSS(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // ----- Speech Function -----
+        function speak(textToSpeak, forceSpeak = false) {
+            if (isExercisePaused && !forceSpeak) return; 
+        
+            const currentTime = Date.now();
+            const timeSinceLastSpeak = currentTime - lastSpokenTime;
+        
+            const isRepCountMessage = textToSpeak.toLowerCase().startsWith("повтор ");
+            const isTimeOutMessage = textToSpeak.toLowerCase().includes("время вышло");
+            const isWorkoutOverMessage = textToSpeak.toLowerCase().includes("тренировка успешно завершена") || textToSpeak.toLowerCase().includes("тренировка остановлена");
+        
+            // 1. Prevent spamming the *exact same* message too quickly.
+            // Rep counts, timeouts, and workout completion messages are exceptions and should always try to speak if forced or appropriate.
+            if (textToSpeak === lastSpokenMessage && !isRepCountMessage && !isTimeOutMessage && !isWorkoutOverMessage) {
+                const threshold = forceSpeak ? MIN_TIME_BETWEEN_FORCED_MESSAGE : MIN_TIME_BETWEEN_SAME_NON_FORCED_MESSAGE;
+                if (timeSinceLastSpeak < threshold) {
+                    // console.log(`Skipping identical message (forced: ${forceSpeak}): "${textToSpeak}" due to time threshold.`);
+                    return;
+                }
+            }
+        
+            // 2. Handle ongoing speech
+            if (synth.speaking) {
+                // If forced, or a critical message type, we need to interrupt.
+                if (forceSpeak || isRepCountMessage || isTimeOutMessage || isWorkoutOverMessage) {
+                    // Cancel all current and queued utterances.
+                    synth.cancel();
+                    // Clear event handlers of the previous utterance to prevent them from firing unexpectedly
+                    if (currentUtterance) {
+                        currentUtterance.onend = null;
+                        currentUtterance.onerror = null;
+                        currentUtterance = null; // Indicate it's no longer the active one we're managing
+                    }
+                } else {
+                    // If already speaking and the new message is not forced (and not a special type),
+                    // don't interrupt the current speech.
+                    return;
+                }
+            }
+        
+            // 3. Create and speak the new utterance
+            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+            currentUtterance.lang = 'ru-RU';
+            const russianVoice = voices.find(voice => voice.lang === 'ru-RU');
+            if (russianVoice) {
+                currentUtterance.voice = russianVoice;
+            }
+            currentUtterance.rate = 0.95; // Slightly slower for clarity
+            currentUtterance.pitch = 1.0;
+        
+            currentUtterance.onend = () => {
+                // console.log(`Speech ended: "${textToSpeak}"`);
+                if (isRepCountMessage) {
+                    lastSpokenMessageWasRepCount = true;
+                } else {
+                    lastSpokenMessageWasRepCount = false;
+                }
+                // Check if this is still the utterance we expect to end
+                if (currentUtterance && currentUtterance.text === textToSpeak) {
+                     currentUtterance = null;
+                }
+            };
+        
+            currentUtterance.onerror = (event) => {
+                console.error('Ошибка синтеза речи:', event.error, `Текст: "${textToSpeak}"`);
+                lastSpokenMessageWasRepCount = false; // Reset on error
+                if (currentUtterance && currentUtterance.text === textToSpeak) {
+                    currentUtterance = null;
+                }
+                // Potentially try to cancel again if an error occurs, might help unstick the synth
+                // synth.cancel(); 
+            };
+        
+            try {
+                synth.speak(currentUtterance);
+                lastSpokenMessage = textToSpeak;
+                lastSpokenTime = currentTime;
+            } catch (e) {
+                console.error("Исключение при вызове synth.speak:", e, `Текст: "${textToSpeak}"`);
+                if (currentUtterance) { // Clean up if speak fails immediately
+                    currentUtterance.onend = null;
+                    currentUtterance.onerror = null;
+                    currentUtterance = null;
+                }
+                // Attempt to reset synth state
+                synth.cancel();
+            }
+        }
+
+        // ----- UI Update Functions -----
+        function updateAIFeedback(feedbackItems) { 
+            aiFeedbackArea.innerHTML = ''; 
+            if (!feedbackItems || feedbackItems.length === 0) {
+                if (isWorkoutActive && !isExercisePaused && !exerciseTargetMet) { aiFeedbackArea.innerHTML = '<p>Анализ позы...</p>';} 
+                else if (exerciseTargetMet) { aiFeedbackArea.innerHTML = '<p style="color:green;">Цель достигнута! Нажмите "Продолжить".</p>'; }
+                return;
+            }
+            feedbackItems.forEach(item => {
+                let color = 'green';
+                if (item.severity === 'Red') color = 'red';
+                else if (item.severity === 'Orange') color = '#FFA500';
+                aiFeedbackArea.innerHTML += `<p style="color:${color}; margin: 2px 0;">${item.text}</p>`;
+            });
+        }
+        function updateRepCounterDisplay() {
+            if (currentExerciseIndex < 0 || currentExerciseIndex >= workoutPlan.length) return;
+            const exercise = workoutPlan[currentExerciseIndex];
+            if (exercise && exercise.type === 'rep_based') {
+                repCounterDisplay.textContent = `Повторы: ${repCount} / ${exercise.target_reps}`;
+                repCounterDisplay.style.display = 'inline';
+            } else { repCounterDisplay.style.display = 'none'; }
+        }
+        function updateExerciseTimerDisplay(seconds) {
+            if (currentExerciseIndex < 0 || currentExerciseIndex >= workoutPlan.length) return;
+            const currentEx = workoutPlan[currentExerciseIndex];
+            if (currentEx && currentEx.type === 'timed') {
+                exerciseTimerDisplay.textContent = `Время: ${formatSecondsAsMMSS(seconds)}`;
+                exerciseTimerDisplay.style.display = 'inline';
+            } else { exerciseTimerDisplay.style.display = 'none'; }
+        }
+
+        // ----- Exercise Analysis Functions (ENHANCED) -----
+        function analyzeGenericTimedExercise(landmarks, currentExerciseConfig) {
+            let feedbackMessages = []; let speechMessage = ""; let speechPriority = 4;
+            const lm = landmarks;
+
+            // --- Visibility Check (Top Priority) ---
+            const essentialGeneralLandmarks = [
+                lm[MP_LANDMARKS.LEFT_SHOULDER], lm[MP_LANDMARKS.RIGHT_SHOULDER],
+                lm[MP_LANDMARKS.LEFT_HIP], lm[MP_LANDMARKS.RIGHT_HIP],
+                lm[MP_LANDMARKS.LEFT_KNEE], lm[MP_LANDMARKS.RIGHT_KNEE]
+            ];
+            if (essentialGeneralLandmarks.some(p => !p || p.visibility < MIN_VISIBILITY)) {
+                feedbackMessages.push({ key: "visibility_generic", text: "Тело плохо видно. Убедитесь, что вы полностью в кадре и хорошо освещены.", severity: "Red" });
+                speechMessage = "Вас плохо видно! Пожалуйста, поправьте камеру или освещение.";
+                speechPriority = 1; // Critical
+                lastLandmarks = lm.map(landmark => ({...landmark})); // Update lastLandmarks before returning
+                return { feedbackMessages, speechMessage, speechPriority, reps_done_this_frame: 0 };
+            }
+
+            if (currentExerciseConfig.name_internal === "cooldown") {
+                feedbackMessages.push({ text: "Расслабьтесь и глубоко дышите. Удерживайте растяжку.", severity: "Green" });
+                let totalDisplacementCooldown = 0;
+                const keyPointsCooldown = [MP_LANDMARKS.LEFT_KNEE, MP_LANDMARKS.RIGHT_KNEE, MP_LANDMARKS.LEFT_WRIST, MP_LANDMARKS.RIGHT_WRIST];
+                if (lastLandmarks) {
+                    for (const idx of keyPointsCooldown) {
+                        if (lm[idx] && lastLandmarks[idx] && lm[idx].visibility > MIN_VISIBILITY && lastLandmarks[idx].visibility > MIN_VISIBILITY) {
+                            totalDisplacementCooldown += getDistance(lm[idx], lastLandmarks[idx], false);
+                        }
+                    }
+                    if (totalDisplacementCooldown > 0.08) { 
+                        inactivityCounter++; 
+                        if (inactivityCounter > 50) { 
+                           feedbackMessages.push({ text: "Старайтесь удерживать растяжку более плавно, избегайте резких движений.", severity: "Orange" });
+                           speechMessage = "Удерживайте растяжку."; speechPriority = 3;
+                            inactivityCounter = 0;
+                        }
+                    } else { inactivityCounter = 0; }
+                }
+            } else if (currentExerciseConfig.name_internal === "running_in_place") {
+                const lKnee = lm[MP_LANDMARKS.LEFT_KNEE]; const rKnee = lm[MP_LANDMARKS.RIGHT_KNEE];
+                const lHip = lm[MP_LANDMARKS.LEFT_HIP]; const rHip = lm[MP_LANDMARKS.RIGHT_HIP];
+                let activityDetected = false;
+                if (lKnee && rKnee && lHip && rHip && lKnee.visibility > MIN_VISIBILITY && rKnee.visibility > MIN_VISIBILITY && lHip.visibility > MIN_VISIBILITY && rHip.visibility > MIN_VISIBILITY) {
+                    const leftKneeLift = lHip.y - lKnee.y; 
+                    const rightKneeLift = rHip.y - rKnee.y;
+                    const hipAnkleDistL = getDistance(lHip, lm[MP_LANDMARKS.LEFT_ANKLE]);
+                    const hipAnkleDistR = getDistance(rHip, lm[MP_LANDMARKS.RIGHT_ANKLE]);
+                    
+                    const targetKneeLiftMin = 0.15; 
+
+                    if (leftKneeLift > targetKneeLiftMin || rightKneeLift > targetKneeLiftMin) activityDetected = true;
+
+                    if (leftKneeLift < targetKneeLiftMin * 0.5 && rightKneeLift < targetKneeLiftMin * 0.5 && activityDetected) { 
+                        feedbackMessages.push({ text: "Поднимайте колени выше!", severity: "Orange" });
+                        if (speechPriority > 2) { speechMessage = "Выше колени!"; speechPriority = 2; }
+                    } else {
+                         feedbackMessages.push({ text: "Хороший темп!", severity: "Green" });
+                    }
+                }
+                let totalDisplacement = 0;
+                const keyPoints = [ MP_LANDMARKS.LEFT_KNEE, MP_LANDMARKS.RIGHT_KNEE, MP_LANDMARKS.LEFT_WRIST, MP_LANDMARKS.RIGHT_WRIST ];
+                 if (lastLandmarks) {
+                    for (const idx of keyPoints) {
+                        if (lm[idx] && lastLandmarks[idx] && lm[idx].visibility > MIN_VISIBILITY && lastLandmarks[idx].visibility > MIN_VISIBILITY) {
+                             totalDisplacement += getDistance(lm[idx], lastLandmarks[idx], false);
+                        }
+                    }
+                    if (totalDisplacement < 0.02 && !activityDetected) { inactivityCounter++; } else { inactivityCounter = 0; } // Lower threshold for inactivity if no specific activity detected
+                    if (inactivityCounter > INACTIVITY_THRESHOLD_FRAMES) {
+                        feedbackMessages.push({ text: "Двигайтесь активнее!", severity: "Orange" });
+                        speechMessage = "Старайтесь двигаться активнее!"; speechPriority = 2; inactivityCounter = 0;
+                    }
+                }
+
+            } else if (currentExerciseConfig.name_internal === "jumping_jacks") {
+                const lShoulder = lm[MP_LANDMARKS.LEFT_SHOULDER]; const rShoulder = lm[MP_LANDMARKS.RIGHT_SHOULDER];
+                const lWrist = lm[MP_LANDMARKS.LEFT_WRIST]; const rWrist = lm[MP_LANDMARKS.RIGHT_WRIST];
+                const lAnkle = lm[MP_LANDMARKS.LEFT_ANKLE]; const rAnkle = lm[MP_LANDMARKS.RIGHT_ANKLE];
+                let activityDetectedJJ = false;
+
+                if (lWrist && rWrist && lShoulder && rShoulder && lAnkle && rAnkle) {
+                     activityDetectedJJ = true;
+                    if (lWrist.y > lShoulder.y && rWrist.y > rShoulder.y && lWrist.visibility > MIN_VISIBILITY && rWrist.visibility > MIN_VISIBILITY) { // Y is inverted, so > means wrist is below shoulder
+                        feedbackMessages.push({ text: "Поднимайте руки выше, желательно над головой!", severity: "Orange" });
+                         if (speechPriority > 2) { speechMessage = "Руки выше!"; speechPriority = 2;}
+                    }
+                    const shoulderWidth = getDistance(lShoulder, rShoulder);
+                    const ankleWidth = getDistance(lAnkle, rAnkle);
+                    if (shoulderWidth && ankleWidth && ankleWidth < shoulderWidth * 1.1) { // Ankles not significantly wider than shoulders
+                        feedbackMessages.push({ text: "Разводите ноги шире в прыжке!", severity: "Orange" });
+                        if (speechPriority > 2) { speechMessage = "Ноги шире!"; speechPriority = 2;}
+                    }
+                     if (!(lWrist.y > lShoulder.y && rWrist.y > rShoulder.y) && !(shoulderWidth && ankleWidth && ankleWidth < shoulderWidth * 1.1)) {
+                        feedbackMessages.push({ text: "Отличные прыжки!", severity: "Green" });
+                    }
+                }
+                let totalDisplacementJJ = 0;
+                const keyPointsJJ = [ MP_LANDMARKS.LEFT_ANKLE, MP_LANDMARKS.RIGHT_ANKLE, MP_LANDMARKS.LEFT_WRIST, MP_LANDMARKS.RIGHT_WRIST ];
+                 if (lastLandmarks) {
+                    for (const idx of keyPointsJJ) {
+                         if (lm[idx] && lastLandmarks[idx] && lm[idx].visibility > MIN_VISIBILITY && lastLandmarks[idx].visibility > MIN_VISIBILITY) {
+                             totalDisplacementJJ += getDistance(lm[idx], lastLandmarks[idx], false);
+                        }
+                    }
+                    if (totalDisplacementJJ < 0.04 && !activityDetectedJJ) { inactivityCounter++; } else { inactivityCounter = 0; }
+                    if (inactivityCounter > INACTIVITY_THRESHOLD_FRAMES) {
+                        feedbackMessages.push({ text: "Двигайтесь активнее в прыжках!", severity: "Orange" });
+                        speechMessage = "Более энергично!"; speechPriority = 2; inactivityCounter = 0;
+                    }
+                }
+            }
+            lastLandmarks = lm.map(landmark => ({...landmark})); 
+
+            return { feedbackMessages, speechMessage, speechPriority, reps_done_this_frame: 0 };
+        }
+
+        function analyzeSquat(landmarks, currentExerciseConfig) {
+            let feedbackMessages = [];
+            let speechMessage = "";
+            let speechPriority = 4;
+            let primaryErrorKey = null;
+            let reps_done_this_frame = 0;
+            repQualityFlags = {};
+
+            const FLAG_ERROR = (key, text, severity = "Orange") => {
+                const existingError = feedbackMessages.find(fb => fb.key === key && fb.severity === severity);
+                if (!existingError) feedbackMessages.push({ key, text, severity });
+                repQualityFlags[key] = true;
+                if (severity === "Red" && speechPriority >= 1) {
+                    speechPriority = 1;
+                    if (!primaryErrorKey || feedbackMessages.find(f => f.key === primaryErrorKey && f.severity !== "Red")) {
+                        primaryErrorKey = key;
+                    }
+                } else if (severity === "Orange" && speechPriority >= 2) {
+                    speechPriority = 2;
+                    if (!primaryErrorKey) {
+                       primaryErrorKey = key;
+                    }
+                }
+            };
+            const FLAG_GOOD = (key, text) => {
+                if (!repQualityFlags[key]) {
+                    const existingGood = feedbackMessages.find(fb => fb.key === key && fb.severity === "Green");
+                    if (!existingGood) feedbackMessages.push({ key, text, severity: "Green" });
+                }
+            };
+
+            if (exerciseTargetMet) {
+                return { feedbackMessages: [{ text: "Приседания: Цель достигнута!", severity: "Green" }], speechMessage: "", speechPriority: 4, reps_done_this_frame: 0, primaryErrorKey: null };
+            }
+
+            const lm = landmarks;
+            const lS = lm[MP_LANDMARKS.LEFT_SHOULDER];  const rS = lm[MP_LANDMARKS.RIGHT_SHOULDER];
+            const lH = lm[MP_LANDMARKS.LEFT_HIP];      const rH = lm[MP_LANDMARKS.RIGHT_HIP];
+            const lK = lm[MP_LANDMARKS.LEFT_KNEE];     const rK = lm[MP_LANDMARKS.RIGHT_KNEE];
+            const lA = lm[MP_LANDMARKS.LEFT_ANKLE];    const rA = lm[MP_LANDMARKS.RIGHT_ANKLE];
+            const lHeel = lm[MP_LANDMARKS.LEFT_HEEL];  const rHeel = lm[MP_LANDMARKS.RIGHT_HEEL];
+            const lToe = lm[MP_LANDMARKS.LEFT_FOOT_INDEX]; const rToe = lm[MP_LANDMARKS.RIGHT_FOOT_INDEX];
+
+            const requiredPoints = [lS, rS, lH, rH, lK, rK, lA, rA, lHeel, rHeel, lToe, rToe];
+            if (requiredPoints.some(p => !p || p.visibility < MIN_VISIBILITY)) {
+                FLAG_ERROR("visibility_issue", "Ключевые точки для приседаний не видны. Убедитесь, что все тело в кадре и хорошо освещено.", "Red");
+                speechMessage = "Для анализа приседаний вас должно быть хорошо видно. Проверьте камеру.";
+                lastLandmarks = lm.map(landmark => ({ ...landmark }));
+                return { feedbackMessages, speechMessage: speechMessage || "Для анализа приседаний вас должно быть хорошо видно.", speechPriority, reps_done_this_frame: 0, primaryErrorKey };
+            }
+
+            const midHip = getMidPoint(lH, rH, false); const midKnee = getMidPoint(lK, rK, false);
+            const midAnkle = getMidPoint(lA, rA, false); const midShoulder = getMidPoint(lS, rS, false);
+            const midToe = getMidPoint(lToe, rToe, false);
+
+            const lKneeAngle = calculateAngle(lH, lK, lA); const rKneeAngle = calculateAngle(rH, rK, rA);
+            const avgKneeAngle = (lKneeAngle != null && rKneeAngle != null) ? (lKneeAngle + rKneeAngle) / 2 : null;
+
+            let isCurrentlyDeep = false, isCurrentlyStanding = false;
+
+            if (midHip && midKnee && midAnkle && midShoulder && midToe && avgKneeAngle != null) {
+                const shoulderWidth = getDistance(lS, rS, false) || 0.4;
+                const ankleDist = getDistance(lA, rA, false);
+                const bodyHeightApprox = getDistance(midShoulder, midAnkle, false) || 1.0;
+                
+                // --- Stance Width ---
+                if (ankleDist && shoulderWidth) {
+                    if (ankleDist < shoulderWidth * 0.85) FLAG_ERROR("stance_narrow", "Поставьте ноги чуть шире, примерно на ширине плеч.");
+                    else if (ankleDist > shoulderWidth * 1.4) FLAG_ERROR("stance_wide", "Поставьте ноги немного уже, ближе к ширине плеч.");
+                    else FLAG_GOOD("stance_width", "Хорошая ширина постановки ног.");
+                }
+
+                // --- Depth ---
+                const hipKneeYDiff = midHip.y - midKnee.y;
+                isCurrentlyDeep = (hipKneeYDiff > bodyHeightApprox * 0.02 && avgKneeAngle < KNEE_ANGLE_BENT_ENOUGH_FOR_SQUAT + 5) ||
+                                  (avgKneeAngle < KNEE_ANGLE_VERY_DEEP);
+                
+                if (inRepCycle && !isCurrentlyDeep && avgKneeAngle < KNEE_ANGLE_BENT_ENOUGH_FOR_SQUAT) {
+                    if (hipKneeYDiff <= 0) {
+                        FLAG_ERROR("depth_shallow", "Приседайте глубже! Таз должен опускаться ниже уровня колен.");
+                    } else {
+                        FLAG_ERROR("depth_slightly_shallow", "Еще чуть глубже, таз параллельно полу или ниже.");
+                    }
+                } else if (isCurrentlyDeep && inRepCycle) {
+                    FLAG_GOOD("depth", "Отличная глубина!");
+                }
+
+                // --- Head Position (Neck Alignment) ---
+                const nose = lm[MP_LANDMARKS.NOSE];
+                if (nose && nose.visibility >= MIN_VISIBILITY && midShoulder && midHip && midShoulder.visibility >= MIN_VISIBILITY && midHip.visibility >= MIN_VISIBILITY &&
+                    (inRepCycle || isCurrentlyDeep || isCurrentlyStanding)) { // Check head position throughout the movement phases
+                    const shoulderHipDistY = Math.abs(midShoulder.y - midHip.y) || bodyHeightApprox * 0.3; // Fallback for distance
+                    const headDropThreshold = shoulderHipDistY * 0.20; // How much nose.y can be > midShoulder.y (looking down)
+                    const headUpThreshold = shoulderHipDistY * 0.15;   // How much nose.y can be < midShoulder.y (looking up)
+
+                    if (nose.y > midShoulder.y + headDropThreshold) { 
+                        FLAG_ERROR("head_down_squat", "Не опускайте голову, смотрите вперед или немного вниз.", "Orange");
+                    } else if (nose.y < midShoulder.y - headUpThreshold) { 
+                        FLAG_ERROR("head_up_squat", "Не задирайте голову, держите шею на одной линии с корпусом.", "Orange");
+                    } else {
+                        FLAG_GOOD("head_position_squat", "Хорошее положение головы.");
+                    }
+                }
+                
+                // --- Knee Tracking (Valgus/Varus) ---
+                const kneeDist = getDistance(lK, rK, false);
+                if (inRepCycle && isCurrentlyDeep && kneeDist && ankleDist) {
+                    if (kneeDist < ankleDist * 0.8) FLAG_ERROR("knee_valgus", "Колени заваливаются внутрь! Держите их над стопами.", "Red");
+                    else FLAG_GOOD("knee_tracking", "Колени стабильны, хорошо.");
+                }
+
+                // --- Knees Over Toes (Approximate) ---
+                if (inRepCycle && isCurrentlyDeep && avgKneeAngle < 110) {
+                    const kneeToeHorizontalDist = Math.abs(midKnee.x - midToe.x);
+                    const footLengthApprox = getDistance(midAnkle, midToe, false) || shoulderWidth * 0.5;
+                    if (midToe && midKnee.x > midToe.x + footLengthApprox * 0.2 ) {
+                         FLAG_ERROR("knees_past_toes_fwd", "Следите, чтобы колени не выдвигались слишком далеко вперед за носки.");
+                    } else {
+                        FLAG_GOOD("knees_alignment", "Хорошее положение колен относительно стоп.");
+                    }
+                }
+
+                // --- Torso Lean & Back Straightness ---
+                if (midShoulder && midHip) {
+                    const torsoAngleWithVertical = Math.atan2(midShoulder.x - midHip.x, Math.abs(midHip.y - midShoulder.y)) * 180 / Math.PI;
+                    if (inRepCycle && isCurrentlyDeep) {
+                        if (Math.abs(torsoAngleWithVertical) > 45) {
+                            FLAG_ERROR("torso_excessive_lean", "Слишком сильный наклон вперед. Держите спину прямее, грудь выше.");
+                        } else {
+                            FLAG_GOOD("torso_angle", "Хороший наклон корпуса.");
+                        }
+                    }
+                    
+                    if (inRepCycle && !isCurrentlyDeep && !isCurrentlyStanding && avgKneeAngle > KNEE_ANGLE_VERY_DEEP + 10 && avgKneeAngle < KNEE_ANGLE_STANDING - 15) {
+                        if (lastLandmarks) {
+                            const lastMidHipY = getMidPoint(lastLandmarks[MP_LANDMARKS.LEFT_HIP], lastLandmarks[MP_LANDMARKS.RIGHT_HIP], false)?.y;
+                            const lastMidShoulderY = getMidPoint(lastLandmarks[MP_LANDMARKS.LEFT_SHOULDER], lastLandmarks[MP_LANDMARKS.RIGHT_SHOULDER], false)?.y;
+                            if (lastMidHipY != null && lastMidShoulderY != null && midHip.y != null && midShoulder.y != null) {
+                                const hipRise = lastMidHipY - midHip.y;
+                                const shoulderRise = lastMidShoulderY - midShoulder.y;
+                                if (hipRise > bodyHeightApprox * 0.015 && shoulderRise < hipRise * 0.5) {
+                                    FLAG_ERROR("good_morning_squat", "Таз поднимается быстрее плеч. Старайтесь поднимать корпус и таз одновременно.");
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // --- Heels on Ground ---
+                const heelAnkleYDiffL = lHeel.y - lA.y; const heelAnkleYDiffR = rHeel.y - rA.y;
+                if (inRepCycle && isCurrentlyDeep) {
+                    if ( (lHeel.visibility > MIN_VISIBILITY && lA.visibility > MIN_VISIBILITY && heelAnkleYDiffL < -0.020 * bodyHeightApprox) ||
+                         (rHeel.visibility > MIN_VISIBILITY && rA.visibility > MIN_VISIBILITY && heelAnkleYDiffR < -0.020 * bodyHeightApprox) ) {
+                        FLAG_ERROR("heels_up", "Пятки отрываются от пола! Держите стопу полностью прижатой.", "Red");
+                    } else {
+                        FLAG_GOOD("heels_grounded", "Стопы плотно на полу, отлично!");
+                    }
+                }
+
+                // --- Rep Counting Logic ---
+                isCurrentlyStanding = (avgKneeAngle > KNEE_ANGLE_STANDING - 5);
+                if (!inRepCycle && isCurrentlyDeep) {
+                    inRepCycle = true;
+                } else if (inRepCycle && isCurrentlyStanding) {
+                    if (Object.keys(repQualityFlags).length === 0) {
+                        FLAG_GOOD("full_rep_good", "Отличное повторение!");
+                        if (speechPriority > 2) {
+                            speechMessage = "Отлично!";
+                            speechPriority = 3;
+                        }
+                    } else {
+                        // Errors occurred, specific feedback would have been flagged.
+                        // Speech will be handled by the error prioritization below.
+                    }
+                    reps_done_this_frame = 1;
+                    inRepCycle = false;
+                }
+            }
+            
+            // Determine final speechMessage based on priority of flagged errors
+            const redError = feedbackMessages.find(fb => fb.key === primaryErrorKey && fb.severity === "Red");
+            const orangeError = feedbackMessages.find(fb => fb.key === primaryErrorKey && fb.severity === "Orange");
+
+            if (redError) {
+                speechMessage = redError.text;
+            } else if (orangeError) {
+                speechMessage = orangeError.text;
+            } else if (reps_done_this_frame > 0 && Object.keys(repQualityFlags).length === 0 && speechPriority > 2) {
+                if (speechMessage !== "Отлично!") {
+                    speechMessage = "";
+                    speechPriority = 4;
+                }
+            }
+
+            lastLandmarks = lm.map(landmark => ({ ...landmark }));
+            return { feedbackMessages, speechMessage, speechPriority, reps_done_this_frame, primaryErrorKey };
+        }
+
+        // ----- MediaPipe onResults -----
+        function onPoseResults(results) {
+            if (isExercisePaused || !isWorkoutActive || !currentExerciseAnalysisFunction || currentExerciseIndex < 0) {
+                if (canvasElement.width > 0 && canvasElement.height > 0) canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                return;
+            }
+            if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+                return;
+            }
+            if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+            }
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.poseLandmarks) {
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
+                drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 1, radius: 3 });
+                
+                const currentExerciseConfig = workoutPlan[currentExerciseIndex];
+                let analysisResult;
+                try {
+                    analysisResult = currentExerciseAnalysisFunction(results.poseLandmarks, currentExerciseConfig);
+                } catch (e) {
+                    console.error("Error in analysis function:", currentExerciseConfig.analysis_function_name, e);
+                    updateAIFeedback([{ text: `Ошибка анализа упражнения: ${e.message}`, severity: "Red" }]);
+                    speak("Произошла ошибка при анализе упражнения.", true);
+                    lastLandmarks = results.poseLandmarks ? results.poseLandmarks.map(landmark => ({ ...landmark })) : null;
+                    canvasCtx.restore();
+                    return;
+                }
+                
+                if (analysisResult) {
+                    if (!exerciseTargetMet) {
+                        updateAIFeedback(analysisResult.feedbackMessages);
+
+                        let finalSpeechMessage = analysisResult.speechMessage;
+                        let finalSpeechPriority = analysisResult.speechPriority;
+                        const errorKey = analysisResult.primaryErrorKey;
+
+                        // Cooldown logic for specific error keys (form corrections)
+                        if (errorKey && finalSpeechMessage && finalSpeechPriority < 3) {
+                            const lastTimeSpoken = lastErrorKeySpokenTimestamps[errorKey] || 0;
+                            if (Date.now() - lastTimeSpoken < ERROR_KEY_REANNOUNCE_COOLDOWN) {
+                                finalSpeechMessage = "";
+                            }
+                        }
+
+                        if (finalSpeechMessage && finalSpeechPriority < 4) {
+                            const force = finalSpeechPriority === 1 || finalSpeechMessage.toLowerCase().startsWith("повтор ");
+                            
+                            if (!lastSpokenMessageWasRepCount || force || finalSpeechPriority === 1) {
+                                speak(finalSpeechMessage, force);
+                                if (errorKey && finalSpeechMessage && finalSpeechPriority < 3) {
+                                    lastErrorKeySpokenTimestamps[errorKey] = Date.now();
+                                }
+                            }
+                        }
+                    } else {
+                        updateAIFeedback([{ text: "Цель достигнута! Нажмите 'Продолжить'.", severity: "Green" }]);
+                    }
+
+                    if (currentExerciseConfig.type === 'rep_based' && analysisResult.reps_done_this_frame > 0 && !exerciseTargetMet) {
+                        repCount += analysisResult.reps_done_this_frame;
+                        updateRepCounterDisplay();
+                        speak(`Повтор ${repCount}`, true);
+                        lastSpokenMessageWasRepCount = true;
+                        lastErrorKeySpokenTimestamps = {};
+                        if (repCount >= currentExerciseConfig.target_reps) {
+                            handleExerciseTargetMet();
+                        }
+                    } else if (analysisResult.reps_done_this_frame === 0 && currentExerciseConfig.type === 'rep_based') {
+                        // If not a rep, ensure lastSpokenMessageWasRepCount is false, so form feedback can come through
+                        // This might be too aggressive if speak() itself sets it for non-rep messages.
+                        // The speak() function's onend handler should correctly set this.
+                    }
+                }
+            } else {
+                if (!exerciseTargetMet) {
+                    updateAIFeedback([{ text: "Поза не найдена. Проверьте камеру и освещение.", severity: "Red" }]);
+                }
+            }
+            canvasCtx.restore();
+        }
+        
+        function handleExerciseTargetMet() {
+            exerciseTargetMet = true; const exercise = workoutPlan[currentExerciseIndex];
+            speak(`Цель ${exercise.type === 'timed' ? 'по времени' : 'повторам'} для \\"${exercise.name_display}\\" достигнута!`, true);
+            mainControlButton.disabled = false; 
+            mainControlButton.textContent = (currentExerciseIndex >= workoutPlan.length - 1) ? "Завершить" : "Продолжить";
+            aiFeedbackArea.innerHTML = `<p style="color:green; font-weight:bold;">${exercise.name_display}: Цель достигнута! Жмите "${mainControlButton.textContent}".</p>`;
+            if (exercise.type === 'timed' && exerciseCountdownInterval) { clearInterval(exerciseCountdownInterval); exerciseCountdownInterval = null; }
+        }
+
+        async function startWorkoutRoutine() {
+            if (!mediaPipePose) {
+                mediaPipePose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+                mediaPipePose.setOptions({ modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, smoothSegmentation: false, minDetectionConfidence: 0.55, minTrackingConfidence: 0.55 });
+                mediaPipePose.onResults(onPoseResults);
+            }
+            if (!camera) {
+                 camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        if (!isExercisePaused && isWorkoutActive && videoElement.readyState >= 2 && videoElement.videoWidth > 0) {
+                           await mediaPipePose.send({image: videoElement});
+                        }
+                    }, 
+                });
+            }
+            try {
+                await camera.start(); videoPlaceholder.classList.add('hidden'); videoElement.classList.remove('hidden'); canvasElement.classList.remove('hidden');
+                isWorkoutActive = true; isExercisePaused = false; currentExerciseIndex = -1; 
+                overallWorkoutStartTime = Date.now(); totalWorkoutPausedTime = 0; pauseSessionStartTime = null;
+                mainControlButton.textContent = "Продолжить"; mainControlButton.disabled = true; 
+                pauseButton.disabled = false; stopButton.disabled = false; userDataDisplay.style.display = 'none';
+                loadNextExercise();
+            } catch (err) {
+                console.error("Ошибка запуска камеры:", err); aiFeedbackArea.innerHTML = `<p style="color:red;">Камера: ${err.message}.</p>`;
+                speak("Ошибка камеры.", true); isWorkoutActive = false; mainControlButton.textContent = "Начать тренировку";
+                mainControlButton.disabled = false; pauseButton.disabled = true; stopButton.disabled = true; userDataDisplay.style.display = 'block';
+            }
+        }
+        function loadNextExercise() {
+            if (exerciseCountdownInterval) { clearInterval(exerciseCountdownInterval); exerciseCountdownInterval = null; }
+            lastLandmarks = null; inactivityCounter = 0; repQualityFlags = {}; repCount = 0;
+            currentExerciseIndex++;
+            if (currentExerciseIndex < workoutPlan.length) { setupExercise(workoutPlan[currentExerciseIndex]); } 
+            else { completeWorkout(); }
+        }
+        function setupExercise(exerciseData) {
+            exerciseTargetMet = false; inRepCycle = false; repQualityFlags = {}; repCount = 0;
+            exerciseNameEl.textContent = exerciseData.name_display;
+            currentExerciseAnalysisFunction = analysisFunctions[exerciseData.analysis_function_name];
+            aiFeedbackArea.innerHTML = `<p>Подготовка: ${exerciseData.name_display}...</p>`;
+            if(instructionVideo && exerciseData.instruction_video_src) {
+                const cs = instructionVideo.querySelector('source'); const cvf = cs ? cs.src.split('/').pop() : ""; const nvf = exerciseData.instruction_video_src.split('/').pop();
+                if (cvf !== nvf) { instructionVideo.src = exerciseData.instruction_video_src; if (cs) cs.src = exerciseData.instruction_video_src; instructionVideo.load(); instructionVideo.play(); }
+            }
+            speak(exerciseData.voice_prompt_start, true); lastSpokenMessageWasRepCount = false; 
+            updateRepCounterDisplay();
+            updateExerciseTimerDisplay(exerciseData.type === 'timed' ? exerciseData.duration_seconds : 0);
+
+
+            if (exerciseData.type === 'timed') {
+                exerciseCountdownSecondsRemaining = exerciseData.duration_seconds;
+                startExerciseCountdownTimer();
+                mainControlButton.disabled = true; 
+            } else if (exerciseData.type === 'rep_based') {
+                mainControlButton.disabled = true; 
+            }
+            mainControlButton.textContent = (currentExerciseIndex >= workoutPlan.length - 1) ? "Завершить" : "Продолжить";
+            setTimeout(() => { 
+                if(isWorkoutActive && currentExerciseIndex < workoutPlan.length && workoutPlan[currentExerciseIndex].name_internal === exerciseData.name_internal) {
+                   aiFeedbackArea.innerHTML = `<p>Выполняйте: ${exerciseData.name_display}</p>`; 
+                }
+            }, 2500);
+        }
+        function startExerciseCountdownTimer() {
+            if (exerciseCountdownInterval) clearInterval(exerciseCountdownInterval);
+            exerciseCountdownInterval = setInterval(() => {
+                if (!isExercisePaused && isWorkoutActive) {
+                    exerciseCountdownSecondsRemaining--; updateExerciseTimerDisplay(exerciseCountdownSecondsRemaining);
+                    if (exerciseCountdownSecondsRemaining <= 0) {
+                        clearInterval(exerciseCountdownInterval); exerciseCountdownInterval = null; handleExerciseTargetMet();
+                    } else if (exerciseCountdownSecondsRemaining <= 3 && exerciseCountdownSecondsRemaining > 0) { speak(String(exerciseCountdownSecondsRemaining), true); }
+                }
+            }, 1000);
+        }
+        function completeWorkout() {
+            isWorkoutActive = false; if (camera) camera.stop(); 
+            videoElement.classList.add('hidden'); canvasElement.classList.add('hidden');
+            videoPlaceholder.classList.remove('hidden'); videoPlaceholder.textContent = "Тренировка завершена!";
+            speak("Тренировка успешно завершена! Отличная работа!", true);
+            aiFeedbackArea.innerHTML = "<h2>Тренировка завершена!</h2><p>Подготовка результатов...</p>";
+            mainControlButton.textContent = "Начать тренировку"; mainControlButton.disabled = false;
+            pauseButton.disabled = true; stopButton.disabled = true; userDataDisplay.style.display = 'block';
+            const dur = overallWorkoutStartTime ? (Date.now() - overallWorkoutStartTime - totalWorkoutPausedTime) : 0;
+            localStorage.setItem('lastWorkoutDuration', formatDuration(dur));
+            localStorage.removeItem('lastWorkoutRepCount'); 
+            setTimeout(() => { window.location.href = "{% url 'results_screen' %}"; }, 3000);
+        }
+        function abortWorkout() {
+            isWorkoutActive = false; if (camera) camera.stop();
+            if (exerciseCountdownInterval) { clearInterval(exerciseCountdownInterval); exerciseCountdownInterval = null; }
+            speak("Тренировка остановлена.", true); videoElement.classList.add('hidden'); canvasElement.classList.add('hidden');
+            videoPlaceholder.classList.remove('hidden'); videoPlaceholder.textContent = "Тренировка прервана.";
+            mainControlButton.textContent = "Начать тренировку"; mainControlButton.disabled = false;
+            pauseButton.disabled = true; pauseButton.textContent = "Пауза"; stopButton.disabled = true;
+            isExercisePaused = false; userDataDisplay.style.display = 'block';
+            aiFeedbackArea.innerHTML = "<p>Тренировка прервана.</p>"; currentExerciseIndex = -1; 
+        }
+
+        // ----- Event Listeners -----
+        mainControlButton.addEventListener('click', () => {
+            if (!isWorkoutActive) { startWorkoutRoutine(); } 
+            else { 
+                if (exerciseTargetMet) {
+                    loadNextExercise(); 
+                } else if (workoutPlan[currentExerciseIndex]) {
+                    speak(`Пропускаем ${workoutPlan[currentExerciseIndex].name_display}.`, true); 
+                    loadNextExercise();
+                }
+            }
+        });
+        pauseButton.addEventListener('click', () => {
+            if (!isWorkoutActive) return; isExercisePaused = !isExercisePaused;
+            if (isExercisePaused) {
+                pauseSessionStartTime = Date.now(); pauseButton.textContent = 'Возобновить';
+                aiFeedbackArea.innerHTML = '<p>Пауза.</p>'; speak("Пауза.", true);
+            } else {
+                if (pauseSessionStartTime) { totalWorkoutPausedTime += (Date.now() - pauseSessionStartTime); pauseSessionStartTime = null; }
+                pauseButton.textContent = 'Пауза'; aiFeedbackArea.innerHTML = '<p>Возобновлено.</p>';
+                speak("Возобновлена.", true); lastSpokenMessage = ""; 
+            }
+        });
+        stopButton.addEventListener('click', abortWorkout);
+        document.addEventListener('DOMContentLoaded', function() {
+            const p = new URLSearchParams(window.location.search);
+            const g=p.get('goal'),l=p.get('fitness_level'),h=p.get('health_conditions'),f=p.get('workout_frequency'),e=p.get('preferred_exercises');
+            const dGE=document.getElementById('data-goal'),dLE=document.getElementById('data-level'),dHE=document.getElementById('data-health'),dFE=document.getElementById('data-frequency'),dPE=document.getElementById('data-prefs');
+            if(dGE&&g)dGE.textContent=g.replace(/_/g,' ');if(dLE&&l)dLE.textContent=l;if(dHE&&h)dHE.textContent=h;else if(dHE)dHE.textContent="Нет";if(dFE&&f)dFE.textContent=f+(f==1?" раз в неделю": (f >=2 && f <=4 ? " раза в неделю" : " раз в неделю") );if(dPE&&e)dPE.textContent=e;else if(dPE)dPE.textContent="Не указаны";
+            pauseButton.disabled=true;stopButton.disabled=true;
+        });
+        window.addEventListener('beforeunload', () => {
+            if (isWorkoutActive && camera) { camera.stop(); }
+            if (mediaPipePose) { mediaPipePose.close(); mediaPipePose = null; }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты тренировки</title>
+    
+    <link rel="icon" href="{% static 'img/logo.png' %}">
+    <style>
+        body {
+          margin: 0;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background-color: #f9fbfd;
+          color: #1e293b;
+          line-height: 1.6;
+          padding: 40px 20px;
+          display: flex;
+          justify-content: center;
+          min-height: 100vh;
+          box-sizing: border-box;
+        }
+      
+        .container {
+          background-color: #ffffff;
+          max-width: 720px;
+          width: 100%;
+          padding: 40px 30px;
+          border-radius: 20px;
+          box-shadow: 0 16px 40px rgba(0, 123, 255, 0.15);
+          box-sizing: border-box;
+        }
+      
+        h1 {
+          font-weight: 700;
+          font-size: 2.8rem;
+          color: #007bff;
+          margin-bottom: 30px;
+          text-align: center;
+        }
+      
+        section {
+          margin-bottom: 36px;
+        }
+      
+        h2 {
+          font-weight: 600;
+          font-size: 1.9rem;
+          color: #0056b3;
+          border-bottom: 2px solid #a4c5ff;
+          padding-bottom: 6px;
+          margin-bottom: 20px;
+        }
+      
+        p, ul {
+          font-size: 1.1rem;
+          max-width: 700px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+      
+        ul {
+          list-style-type: disc;
+          padding-left: 20px;
+        }
+      
+        ul li {
+          margin-bottom: 10px;
+          color: #334e68;
+        }
+      
+        .highlight-good {
+          color: #198754; /* Bootstrap green */
+          font-weight: 700;
+        }
+      
+        .highlight-improve {
+          color: #fd7e14; /* Bootstrap orange */
+          font-weight: 700;
+        }
+      
+        .highlight-excellent {
+          color: #0d6efd; /* Bootstrap blue */
+          font-weight: 700;
+        }
+      
+        .error-count {
+          font-weight: 700;
+          color: #dc3545; /* Bootstrap red */
+        }
+      
+        .actions {
+          display: flex;
+          justify-content: center;
+          gap: 24px;
+          flex-wrap: wrap;
+          margin-top: 10px;
+        }
+      
+        .actions button {
+          background-color: #007bff;
+          border: none;
+          border-radius: 30px;
+          color: white;
+          padding: 14px 36px;
+          font-size: 1.15rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background-color 0.25s ease;
+          user-select: none;
+        }
+      
+        .actions button:hover {
+          background-color: #0056b3;
+        }
+      
+        .actions button.secondary {
+          background-color: #ffc107;
+          color: #212529;
+        }
+      
+        .actions button.secondary:hover {
+          background-color: #e0a800;
+        }
+      
+        @media (max-width: 600px) {
+          body {
+            padding: 20px 10px;
+          }
+      
+          .container {
+            padding: 30px 20px;
+            border-radius: 16px;
+          }
+      
+          h1 {
+            font-size: 2.2rem;
+            margin-bottom: 24px;
+          }
+      
+          h2 {
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+          }
+      
+          p, ul {
+            font-size: 1rem;
+          }
+      
+          .actions {
+            flex-direction: column;
+            gap: 16px;
+          }
+      
+          .actions button {
+            width: 100%;
+            padding: 14px 0;
+            font-size: 1.1rem;
+          }
+        }
+      </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ваши результаты тренировки</h1>
+    
+        <section aria-labelledby="summary-heading">
+          <h2 id="summary-heading">Сводка</h2>
+          <p><strong>Упражнение:</strong> <span id="exercise-name-results">Приседания</span></p>
+          <p><strong>Продолжительность:</strong> <span id="workout-duration">5:00</span></p>
+          <p><strong>Всего повторений:</strong> <span id="total-reps">1</span></p>
+         
+        </section>
+    
+        <section aria-labelledby="errors-heading">
+          <h2 id="errors-heading">Детализация ошибок</h2>
+          <ul id="errors-list">
+            <li>У вас нет значительных ошибок — работа выполнена отлично!</li>
+          </ul>
+        </section>
+        <section aria-labelledby="errors-heading">
+            <h2 id="errors-heading">Детализация ошибок</h2>
+            <ul id="errors-list">
+              <li>Не забывайте про правильное дыхание во время тренировок — это повысит эффективность.</li>
+              <li>Постарайтесь увеличить интенсивность или количество повторений, если предыдущая тренировка была комфортной.</li>
+            </ul>
+          </section>
+        <div class="actions">
+          <button onclick="navigateToGoalSelection()">Новая тренировка</button>
+          <button id="back-to-dashboard-btn" class="secondary">Панель управления</button>
+        </div>
+      </div>
+
+    <script>
+        let workoutAnalysis = {
+            totalReps: 0,
+            correctReps: 0,
+            errors: {
+                shallowDepth: 0,
+                poorKneeBend: 0,
+                backPosture: 0,
+                kneesValgus: 0,
+                visibilityIssue: 0
+            }
+        };
+
+        const errorDescriptions = {
+            shallowDepth: "Недостаточная глубина приседа",
+            poorKneeBend: "Недостаточный сгиб коленей",
+            backPosture: "Наклон спины / Потеря осанки",
+            kneesValgus: "Завал коленей внутрь (Вальгус)",
+            visibilityIssue: "Проблемы с видимостью тела камерой"
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedDuration = localStorage.getItem('lastWorkoutDuration');
+            document.getElementById('workout-duration').textContent = savedDuration || "Не записано";
+            if (savedDuration) localStorage.removeItem('lastWorkoutDuration');
+
+            const savedAnalysisData = localStorage.getItem('lastWorkoutAnalysisData');
+            if (savedAnalysisData) {
+                workoutAnalysis = JSON.parse(savedAnalysisData);
+                localStorage.removeItem('lastWorkoutAnalysisData');
+            }
+
+            document.getElementById('total-reps').textContent = workoutAnalysis.totalReps || 0;
+            document.getElementById('correct-reps').textContent = workoutAnalysis.correctReps || 0;
+
+            const errorsListEl = document.getElementById('errors-list');
+            errorsListEl.innerHTML = ''; // Clear placeholder
+            let totalErrorFrames = 0;
+            let hasCriticalErrors = false;
+            for (const errorType in workoutAnalysis.errors) {
+                const count = workoutAnalysis.errors[errorType];
+                if (count > 0) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${errorDescriptions[errorType] || errorType}: <span class="error-count">${count}</span>`;
+                    errorsListEl.appendChild(li);
+                    if (errorType !== 'visibilityIssue') { // Don't count visibility as a form error for overall eval
+                        totalErrorFrames += count;
+                        if(count > 5) hasCriticalErrors = true; // Arbitrary threshold for critical impact
+                    }
+                }
+            }
+            if (errorsListEl.children.length === 0) {
+                errorsListEl.innerHTML = '<li>Ошибок не зафиксировано. Отлично!</li>';
+            }
+
+            // Calculate and display calories (very basic)
+            const caloriesBurned = (workoutAnalysis.correctReps || 0) * 5; // Example: 5 calories per correct rep
+            document.getElementById('calories-burned').textContent = caloriesBurned + ' ккал';
+
+            // Determine Overall Evaluation
+            const overallEvaluationEl = document.getElementById('overall-evaluation');
+            let evaluationText = "Требует улучшения";
+            let evaluationClass = "highlight-improve";
+
+            if (workoutAnalysis.totalReps > 0) {
+                const correctPercentage = (workoutAnalysis.correctReps / workoutAnalysis.totalReps) * 100;
+                if (correctPercentage >= 90 && !hasCriticalErrors) {
+                    evaluationText = "Отлично!";
+                    evaluationClass = "highlight-excellent";
+                } else if (correctPercentage >= 70 && totalErrorFrames < workoutAnalysis.totalReps * 2) { // Allow some error frames
+                    evaluationText = "Хорошо";
+                    evaluationClass = "highlight-good";
+                }
+            } else if (workoutAnalysis.totalReps === 0 && totalErrorFrames === 0){
+                 evaluationText = "Нет данных для оценки (повторы не засчитаны)";
+                 evaluationClass = "";
+            }
+            overallEvaluationEl.textContent = evaluationText;
+            overallEvaluationEl.className = evaluationClass;
+
+            // Setup "Back to Dashboard" button
+            const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
+            const userProfileParams = localStorage.getItem('lastUserProfileParams');
+            if (backToDashboardBtn && userProfileParams) {
+                backToDashboardBtn.addEventListener('click', function() {
+                    window.location.href = "{% url 'program_dashboard' %}?" + userProfileParams;
+                });
+                // localStorage.removeItem('lastUserProfileParams'); // Optional: remove after use if not needed elsewhere
+            } else if (backToDashboardBtn) {
+                 backToDashboardBtn.addEventListener('click', function() { // Fallback if no params
+                    window.location.href = "{% url 'program_dashboard' %}";
+                });
+            }
+            
+            // Old feedback/tips logic - can be removed or updated if new dynamic feedback is generated
+            const feedbackListOldEl = document.getElementById('feedback-list-old');
+            const tipsListOldEl = document.getElementById('tips-list-old');
+            if(feedbackListOldEl) feedbackListOldEl.innerHTML = '<li>Старая система обратной связи будет обновлена.</li>';
+            if(tipsListOldEl) tipsListOldEl.innerHTML = '<li>Советы будут генерироваться на основе ваших ошибок.</li>';
+        });
+
+        function navigateToGoalSelection() { // For "New Workout (other goals)" button
+            window.location.href = "{% url 'select_goal' %}"; 
+        }
+        // navigateToHome is no longer used directly by a button with that ID
+    </script>
+</body>
+</html> 

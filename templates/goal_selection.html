@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка вашего фитнес-профиля</title>
+    <link rel="icon" href="{% static 'img/logo.png' %}">
+    <style>
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: #f0f5ff;
+          margin: 0;
+          padding: 40px 15px;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          min-height: 100vh;
+          color: #1a2738;
+        }
+      
+        .container {
+          background: #ffffff;
+          max-width: 600px;
+          width: 100%;
+          padding: 35px 40px;
+          border-radius: 16px;
+          box-shadow: 0 12px 28px rgba(0, 123, 255, 0.15);
+          box-sizing: border-box;
+        }
+      
+        h1 {
+          font-weight: 800;
+          font-size: 2.5rem;
+          color: #007bff;
+          margin-bottom: 30px;
+          text-align: center;
+          user-select: none;
+        }
+      
+        label {
+          display: block;
+          font-weight: 700;
+          font-size: 1.05rem;
+          margin-bottom: 8px;
+          color: #004a99;
+          user-select: none;
+        }
+      
+        select,
+        input[type="text"],
+        input[type="number"] {
+          width: 100%;
+          padding: 12px 15px;
+          margin-bottom: 22px;
+          font-size: 1rem;
+          border: 2px solid #c7d7ff;
+          border-radius: 12px;
+          background-color: #f8fbff;
+          transition: border-color 0.3s ease;
+          box-sizing: border-box;
+          outline-offset: 2px;
+        }
+      
+        select:focus,
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+          border-color: #007bff;
+          background-color: #e4f0ff;
+          outline: none;
+        }
+      
+        .checkbox-group label {
+          font-weight: 500;
+          font-size: 1rem;
+          color: #1a2738;
+          margin-bottom: 12px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          user-select: none;
+        }
+      
+        .checkbox-group input[type="checkbox"] {
+          margin-right: 12px;
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+        }
+      
+        #other_health_condition_details {
+          margin-top: 8px;
+          padding: 10px 14px;
+          font-size: 1rem;
+          border: 2px solid #c7d7ff;
+          border-radius: 12px;
+          width: 100%;
+          background-color: #f8fbff;
+          box-sizing: border-box;
+          transition: border-color 0.3s ease;
+        }
+      
+        #other_health_condition_details:focus {
+          border-color: #007bff;
+          background-color: #e4f0ff;
+          outline: none;
+        }
+      
+        button {
+          width: 100%;
+          padding: 16px 0;
+          font-size: 1.2rem;
+          font-weight: 800;
+          color: #ffffff;
+          background: linear-gradient(90deg, #0069d9 0%, #00a9ff 100%);
+          border: none;
+          border-radius: 28px;
+          cursor: pointer;
+          box-shadow: 0 8px 20px rgba(0, 169, 255, 0.4);
+          transition: background 0.3s ease, box-shadow 0.3s ease;
+          user-select: none;
+          margin-top: 10px;
+        }
+      
+        button:hover {
+          background: linear-gradient(90deg, #004a99 0%, #007bff 100%);
+          box-shadow: 0 10px 30px rgba(0, 123, 255, 0.6);
+        }
+      
+        /* Responsive */
+        @media (max-width: 480px) {
+          .container {
+            padding: 25px 20px;
+          }
+      
+          h1 {
+            font-size: 2rem;
+            margin-bottom: 24px;
+          }
+      
+          label {
+            font-size: 1rem;
+          }
+      
+          select,
+          input[type="text"],
+          input[type="number"] {
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+          }
+      
+          button {
+            font-size: 1.1rem;
+            padding: 14px 0;
+          }
+        }
+      </style>
+      
+</head>
+<body>
+    <div class="container">
+        <h1>Заполните ваш фитнес-профиль</h1>
+        <form action="{% url 'select_goal' %}" method="post">
+            {% csrf_token %}
+            
+            <label for="goal">Ваша основная цель:</label>
+            <select id="goal" name="goal">
+                <option value="lose_weight">Сбросить вес</option>
+                <option value="build_muscle">Нарастить мышцы</option>
+                <option value="stay_in_shape">Просто оставаться в форме</option>
+            </select>
+
+            <label for="fitness_level">Ваш текущий уровень подготовки:</label>
+            <select id="fitness_level" name="fitness_level">
+                <option value="beginner">Начинающий</option>
+                <option value="intermediate">Средний</option>
+                <option value="advanced">Продвинутый</option>
+            </select>
+
+            <label for="workout_frequency">Как часто вы планируете тренироваться?</label>
+            <select id="workout_frequency" name="workout_frequency">
+                <option value="2">2 раза в неделю</option>
+                <option value="3" selected>3 раза в неделю</option>
+                <option value="4">4 раза в неделю</option>
+                <option value="5">5 раз в неделю</option>
+                <option value="7">Каждый день</option>
+            </select>
+
+            <label>Отметьте, если у вас есть следующие медицинские ограничения/состояния:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="med_joints" value="true"> Проблемы с суставами (например, колени, спина)</label>
+                <label><input type="checkbox" name="med_cardio" value="true"> Сердечно-сосудистые заболевания</label>
+                <label><input type="checkbox" name="med_recent_injury" value="true"> Недавние травмы или операции</label>
+                <label><input type="checkbox" name="med_pregnancy" value="true"> Беременность или послеродовой период</label>
+                <label>
+                    <input type="checkbox" name="med_other_text_trigger" id="med_other_text_trigger" value="true"> Другое (укажите)
+                </label>
+                <input type="text" id="other_health_condition_details" name="med_other_details" placeholder="Укажите другие ограничения">
+            </div>
+
+            <label style="margin-top: 20px;">Какие типы упражнений вам нравятся больше всего? (Выберите несколько)</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="pref_cardio" value="true"> Кардио (бег, велосипед, плавание)</label>
+                <label><input type="checkbox" name="pref_strength" value="true"> Силовые тренировки (с весами, отжимания, подтягивания)</label>
+                <label><input type="checkbox" name="pref_yoga_pilates" value="true"> Йога и пилатес</label>
+                <label><input type="checkbox" name="pref_stretching" value="true"> Растяжка и гибкость</label>
+            </div>
+            
+            <!-- Hidden field to carry over original 'workout_days' if needed, or remove if 'workout_frequency' replaces it entirely -->
+            <!-- For now, I assume workout_frequency replaces workout_days logic for simplicity in the view -->
+            <!-- <input type="hidden" name="workout_days" value="3"> -->
+
+
+            <button type="submit">Сохранить и сгенерировать план</button>
+        </form>
+    </div>
+    <script>
+        const otherHealthTrigger = document.getElementById('med_other_text_trigger');
+        const otherHealthDetails = document.getElementById('other_health_condition_details');
+        if (otherHealthTrigger && otherHealthDetails) {
+            otherHealthTrigger.addEventListener('change', function() {
+                if (this.checked) {
+                    otherHealthDetails.style.display = 'block';
+                    otherHealthDetails.focus();
+                } else {
+                    otherHealthDetails.style.display = 'none';
+                    otherHealthDetails.value = ''; 
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

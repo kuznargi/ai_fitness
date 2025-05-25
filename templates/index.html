@@ -1,0 +1,227 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kunzada</title>
+    <link rel="stylesheet" href="{% static 'css/mainPage.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/service.css' %}">
+    <link rel="stylesheet" href="{% static 'css/faq.css' %}">
+    <link rel="stylesheet" href="{% static 'css/features.css' %}">
+    <link rel="icon" href="{% static 'img/logo.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://unpkg.com/ionicons@4.5.10-0/dist/css/ionicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+  
+
+
+    {% include "navbar.html" %}
+
+    <div class="slider">
+        <div class="list">
+
+            <div class="item">
+                <img src="{% static 'img/img1.jpg' %}" alt="">
+
+                <div class="content">
+                    <div class="title">ELEVATE YOUR </div>
+                    <div class="type">WORKOUT</div>
+                    <div class="description">
+                      Поднимите свои тренировки на новый уровень. У нас комфортная атмосфера, профессиональные тренеры и всё, что нужно для вашего успеха.
+                    </div>
+                    <div class="button">
+                      <a href="{% url 'select_goal' %}" class="btn">НАЧАТЬ</a>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="item">
+                <img src="{% static 'img/img2.jpg' %}" alt="">
+
+                <div class="content">
+                    <div class="title">YOUR AI FITNESS</div>
+                    <div class="type">COACH</div>
+                    <div class="description">
+                      Теперь у вас есть тренер, который всегда с вами — умный, внимательный и мотивирующий.
+ИИ подстраивает занятия под вас, помогает сохранять мотивацию и добиваться результатов.
+Начинайте путь к здоровью вместе с технологией, которая заботится о вас!
+                    </div>
+                    <div class="button">
+                      <a href="{% url 'select_goal' %}" class="btn">НАЧАТЬ</a>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="item">
+                <img src="{% static 'img/img3.jpg' %}" alt="">
+
+                <div class="content">
+                    <div class="title">PERSONALIZED AI</div>
+                    <div class="type">WORKOUTS</div>
+                    <div class="description">
+                      Программы, которые подстраиваются под вас в режиме реального времени <br>
+                      — прогресс гарантирован!
+                    </div>
+                    <div class="button">
+                      <a href="{% url 'select_goal' %}" class="btn">НАЧАТЬ</a>
+
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+
+        <div class="thumbnail">
+
+            <div class="item">
+                <img src="{% static 'img/img1.jpg' %}" alt="">
+            </div>
+            <div class="item">
+                <img src="{% static 'img/img2.jpg' %}" alt="">
+            </div>
+            <div class="item">
+                <img src="{% static 'img/img3.jpg' %}" alt="">
+            </div>
+
+
+        </div>
+
+
+        <div class="nextPrevArrows">
+            <button class="prev">
+                < </button>
+                    <button class="next"> > </button>
+        </div>
+
+
+    </div>
+<section class="about-us" id="about">
+  <div class="container">
+    <div class="about-content">
+      <div class="about-image">
+        <img src="{% static 'img/robot.jpg' %}" alt="About Us Image" />
+      </div>
+      <div class="about-text">
+        <h2>About Us</h2>
+        <p>
+          Наше приложение — это персональный тренер с искусственным интеллектом, созданный, чтобы сделать тренировки удобными, безопасными и максимально эффективными. Забудь про универсальные программы — ты получаешь план, составленный именно для тебя.</p>
+        <p>
+          Во время тренировки ИИ с помощью камеры отслеживает твою технику. Если ты делаешь что-то неправильно — голосовые и визуальные подсказки сразу помогут исправиться. Это не просто тренировка, это обратная связь, как в зале с инструктором.</p>
+          <p>лосовой тренер подскажет, как двигаться, когда сделать паузу, и не даст сдаться. Ты не один — ИИ всегда рядом, чтобы направить и замотивировать.</p>
+  
+      </div>
+    </div>
+  </div>
+</section>
+    <section class="services" id="services">
+    <div class="pt-5 pb-5">
+        <div class="container">
+          <div class="row">
+            <div class="section-head-1 col-sm-12" style="text-align: center;">
+              <h2 style="margin-top: 5rem;  font-size: 3rem; color:#00bfff" >Challenges We Help You Overcome</h2>
+              
+             
+            </div>
+            
+            <div class="col-lg-4 col-sm-6">
+              
+              <div class="item">
+                <h6>Пользователи часто выполняют упражнения неправильно без контроля техники, что снижает эффективность тренировок и увеличивает риск травм.</h6>
+                
+                <p> Внедрение системы реального времени с анализом движений пользователя с помощью ИИ, которая отслеживает технику выполнения упражнений. Приложение будет давать голосовые и текстовые подсказки, чтобы корректировать ошибки во время тренировки и минимизировать риск травм.
+
+                  <br><br></p>
+              </div>
+            </div>
+            
+            <div class="col-lg-4 col-sm-6">
+              <div class="item">
+                <h6> Современные фитнес-приложения не учитывают индивидуальные особенности пользователей и не помогают адаптировать программу под их цели и уровень подготовки.</h6>
+                <p> Разработка умного фитнес-приложения, которое генерирует персонализированные планы тренировок с учётом целей (похудение, набор массы, поддержание формы) и уровня подготовки пользователя. Приложение будет адаптировать интенсивность тренировок и предоставлять советы по питанию и восстановлению.<br><br></p>
+              </div>
+            </div>
+            <div class="col-lg-4 col-sm-6">
+              <div class="item"> 
+                <h6> Отсутствие персонализированной обратной связи и голосовых подсказок затрудняет исправление ошибок во время тренировки.</h6>
+                <p>Добавление персонализированного ИИ-тренера, который не только подсказывает, что делать, но и адаптирует тренировку под индивидуальные потребности пользователя, учитывая его уровень подготовки, цели и физиологические особенности. Голосовые подсказки помогут удерживать правильную технику на протяжении всей тренировки.<br></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+   <section class="faq" id="faq">
+    <div class="ques">
+      <h1 class="title">FAQ</h1>
+
+      <div class="question">
+        <div class="question-title">
+          <h4>Какие технологии используются в приложении?          </h4>
+          <div class="question-toggle">
+            <i class="fa-solid fa-plus open"></i>
+            <i class="fa-solid fa-minus close"></i>
+          </div>
+        </div>
+        <div class="question-content">
+          <p class="text">
+            Мы используем компьютерное зрение, искусственный интеллект и нейросетевые модели для анализа движений, а также голосовые подсказки с использованием Web Speech API. Бэкенд построен на Django, фронтенд — на HTML/CSS/JS.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">
+          <h4>Нужно ли подключение к интернету?</h4>
+          <div class="question-toggle">
+            <i class="fa-solid fa-plus open"></i>
+            <i class="fa-solid fa-minus close"></i>
+          </div>
+        </div>
+        <div class="question-content">
+          <p class="text">
+            Да, для работы ИИ-модели и хранения данных требуется стабильное интернет-соединение. </p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">
+          <h4>Можно ли настроить тренировку под свои ограничения и предпочтения?</h4>
+          <div class="question-toggle">
+            <i class="fa-solid fa-plus open"></i>
+            <i class="fa-solid fa-minus close"></i>
+          </div>
+        </div>
+        <div class="question-content">
+          <p class="text">
+            Да. В начале вы проходите короткий опрос — приложение учитывает ваш уровень подготовки, цели, частоту тренировок и даже медицинские ограничения.
+
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+    {% include "footer.html" %}
+
+    <script src="{% static 'js/mainPage.js' %}"></script>
+    <script src="{% static 'js/faq.js' %}"></script>
+
+</body>
+
+</html>

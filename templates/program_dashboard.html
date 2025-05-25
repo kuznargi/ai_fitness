@@ -1,0 +1,297 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления программой</title>
+    <link rel="icon" href="{% static 'img/logo.png' %}">
+    <style>
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          background: #f5f9ff;
+          color: #222;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          min-height: 100vh;
+          padding: 40px 20px;
+        }
+      
+        .dashboard-container {
+          background: #fff;
+          border-radius: 16px;
+          box-shadow: 0 12px 30px rgba(0, 123, 255, 0.15);
+          max-width: 800px;
+          width: 100%;
+          padding: 30px 40px;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          gap: 30px;
+        }
+      
+        h1 {
+          margin: 0;
+          font-weight: 700;
+          font-size: 2.5rem;
+          color: #007bff;
+          text-align: center;
+          user-select: none;
+        }
+      
+        .program-name {
+          font-size: 1.6rem;
+          font-weight: 700;
+          color: #0056b3;
+          text-align: center;
+          user-select: none;
+        }
+      
+        .workout-plan-section {
+          border-radius: 12px;
+          background: #e7f0ff;
+          padding: 20px 30px;
+          box-shadow: inset 0 0 10px rgba(0, 123, 255, 0.1);
+        }
+      
+        .workout-plan-section h3 {
+          margin-top: 0;
+          margin-bottom: 18px;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #004080;
+          border-bottom: 2px solid #007bff;
+          padding-bottom: 8px;
+        }
+      
+        #workout-exercises-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+      
+        #workout-exercises-list li {
+          padding: 14px 10px;
+          border-bottom: 1px dashed #aacfff;
+          font-size: 1.15rem;
+          color: #003366;
+          font-weight: 600;
+        }
+      
+        #workout-exercises-list li:last-child {
+          border-bottom: none;
+        }
+      
+        .actions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+      
+        #start-workout-btn {
+          background-color: #007bff;
+          border: none;
+          border-radius: 30px;
+          padding: 16px 40px;
+          color: white;
+          font-weight: 700;
+          font-size: 1.2rem;
+          cursor: pointer;
+          box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+          transition: background-color 0.3s ease, box-shadow 0.3s ease;
+          user-select: none;
+        }
+      
+        #start-workout-btn:hover {
+          background-color: #0056b3;
+          box-shadow: 0 10px 28px rgba(0, 86, 179, 0.6);
+        }
+      
+        .actions p {
+          font-size: 0.85rem;
+          color: #6c757d;
+          max-width: 320px;
+          text-align: center;
+        }
+      
+        .user-info {
+          background: #e0efff;
+          border-radius: 12px;
+          padding: 22px 28px;
+          box-shadow: inset 0 0 12px rgba(0, 123, 255, 0.12);
+          color: #004080;
+          font-weight: 600;
+          font-size: 1rem;
+          user-select: none;
+        }
+      
+        .user-info h4 {
+          margin-top: 0;
+          margin-bottom: 16px;
+          font-weight: 700;
+          font-size: 1.5rem;
+          color: #0056b3;
+        }
+      
+        .user-info p {
+          margin: 8px 0;
+        }
+      
+        @media (max-width: 600px) {
+          .dashboard-container {
+            padding: 20px 15px;
+          }
+          #start-workout-btn {
+            width: 100%;
+            padding: 14px 0;
+            font-size: 1.1rem;
+          }
+        }
+      </style>
+      
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Панель управления программой</h1>
+        
+        <div class="program-name" id="program-name-display">
+            Загрузка названия программы...
+        </div>
+
+        <div class="workout-plan-section">
+            <h3 id="workout-plan-title">План тренировки на сегодня:</h3>
+            <ul id="workout-exercises-list">
+                <li>Загрузка упражнений...</li>
+            </ul>
+        </div>
+
+        <div class="actions">
+            <button id="start-workout-btn">Начать тренировку по плану</button>
+            </div>
+        
+        <div class="user-info" id="user-profile-summary">
+            <h4>Ваш профиль:</h4>
+            <p><strong>Цель:</strong> <span id="data-goal"></span></p>
+            <p><strong>Уровень:</strong> <span id="data-level"></span></p>
+            <p><strong>Частота:</strong> <span id="data-frequency"></span></p>
+            <p><strong>Мед. ограничения:</strong> <span id="data-health"></span></p>
+            <p><strong>Предпочтения:</strong> <span id="data-prefs"></span></p>
+        </div>
+
+    </div>
+
+    <script>
+        const workoutSets = {
+            'lose_weight': {
+                programName: 'Программа "Снижение веса" - фокус на доступных упражнениях',
+                exercises: [
+                    { name: "Бег на месте", details: "60 секунд" },
+                    { name: "Прыжки Джампинг Джек", details: "60 секунд" },
+                    { name: "Приседания", details: "15 повторений" },
+                    { name: "Бег на месте", details: "30 секунд" },
+                    { name: "Прыжки Джампинг Джек", details: "30 секунд" }
+                ]
+            },
+            'build_muscle': {
+                programName: 'Программа "Набор массы" - фокус на доступных упражнениях',
+                exercises: [
+                    { name: "Бег на месте", details: "60 секунд (разминка)" },
+                    { name: "Приседания", details: "10-12 повторений" },
+                    { name: "Прыжки Джампинг Джек", details: "30 секунд" },
+                    { name: "Приседания", details: "10-12 повторений" }
+                ]
+            },
+            'improve_endurance': {
+                programName: 'Программа "Развитие выносливости" - фокус на доступных упражнениях',
+                exercises: [
+                    { name: "Бег на месте", details: "90 секунд" },
+                    { name: "Прыжки Джампинг Джек", details: "90 секунд" },
+                    { name: "Приседания", details: "20 повторений (быстрый темп)" },
+                    { name: "Бег на месте", details: "60 секунд" }
+                ]
+            },
+            'stay_in_shape': {
+                programName: 'Программа "Поддержание формы" - фокус на доступных упражнениях',
+                exercises: [
+                    { name: "Бег на месте", details: "45 секунд" },
+                    { name: "Прыжки Джампинг Джек", details: "45 секунд" },
+                    { name: "Приседания", details: "12-15 повторений" }
+                ]
+            },
+            'default': {
+                programName: 'Ваша персональная программа - фокус на доступных упражнениях',
+                exercises: [
+                    { name: "Приседания", details: "10-15 повторений" },
+                    { name: "Бег на месте", details: "60 секунд" },
+                    { name: "Прыжки Джампинг Джек", details: "60 секунд" }
+                ]
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const goal = params.get('goal');
+            const fitnessLevel = params.get('fitness_level');
+            const healthConditions = params.get('health_conditions');
+            const workoutFrequency = params.get('workout_frequency');
+            const preferredExercises = params.get('preferred_exercises');
+
+           
+            if (goal) document.getElementById('data-goal').textContent = goal.replace(/_/g, ' ');
+            else document.getElementById('data-goal').textContent = 'Не указана';
+            if (fitnessLevel) document.getElementById('data-level').textContent = fitnessLevel;
+            else document.getElementById('data-level').textContent = 'Не указан';
+            if (healthConditions) document.getElementById('data-health').textContent = healthConditions;
+            else document.getElementById('data-health').textContent = 'Нет';
+            if (workoutFrequency) document.getElementById('data-frequency').textContent = workoutFrequency + ' раз(а) в неделю';
+            else document.getElementById('data-frequency').textContent = 'Не указана';
+            if (preferredExercises) document.getElementById('data-prefs').textContent = preferredExercises;
+            else document.getElementById('data-prefs').textContent = 'Не указаны';
+            
+            // Determine and display the workout plan
+            const selectedWorkoutSet = workoutSets[goal] || workoutSets['default'];
+            
+            const programNameDisplay = document.getElementById('program-name-display');
+            programNameDisplay.textContent = selectedWorkoutSet.programName;
+
+            const exercisesListEl = document.getElementById('workout-exercises-list');
+            exercisesListEl.innerHTML = ''; 
+
+            if (selectedWorkoutSet.exercises && selectedWorkoutSet.exercises.length > 0) {
+                selectedWorkoutSet.exercises.forEach(exercise => {
+                    const li = document.createElement('li');
+                    li.textContent = exercise.name;
+                    if (exercise.details) {
+                        const detailsSpan = document.createElement('span');
+                        detailsSpan.className = 'exercise-details';
+                        detailsSpan.textContent = `(${exercise.details})`;
+                        li.appendChild(detailsSpan);
+                    }
+                    exercisesListEl.appendChild(li);
+                });
+            } else {
+                exercisesListEl.innerHTML = '<li>Для выбранной цели пока нет конкретных упражнений. Попробуйте общие приседания.</li>';
+            }
+
+          
+            const startWorkoutBtn = document.getElementById('start-workout-btn');
+            if (startWorkoutBtn) {
+                startWorkoutBtn.addEventListener('click', function() {
+                    const queryParams = new URLSearchParams({
+                        goal: goal || '',
+                        fitness_level: fitnessLevel || '',
+                        health_conditions: healthConditions || '',
+                        workout_frequency: workoutFrequency || '',
+                        preferred_exercises: preferredExercises || ''
+                    }).toString();
+                   
+                    window.location.href = "{% url 'workout_screen' %}" + (queryParams ? '?' + queryParams : '');
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
