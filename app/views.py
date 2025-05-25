@@ -80,5 +80,3 @@ def program_dashboard_view(request):
     # print("Dashboard Context:", context) # For debugging if needed
     return render(request, 'program_dashboard.html', context)
 
-def goal_selection_view(request):
-    return HttpResponse("Форма загружается")
