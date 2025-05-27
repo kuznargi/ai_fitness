@@ -407,18 +407,18 @@
         let totalWorkoutPausedTime = 0;
         let lastLandmarks = null; 
         let inactivityCounter = 0; 
-        const INACTIVITY_THRESHOLD_FRAMES = 75; // Approx 2.5 seconds at 30fps
-        let repQualityFlags = {}; // To store if errors occurred in the current rep cycle
-        let currentUtterance = null; // Added to keep track of the current speech utterance
-        let lastErrorKeySpokenTimestamps = {}; // NEW: Tracks when specific error *keys* were last spoken
-        const ERROR_KEY_REANNOUNCE_COOLDOWN = 4000; // NEW: Cooldown in ms for re-announcing the same error type
+        const INACTIVITY_THRESHOLD_FRAMES = 75;
+        let repQualityFlags = {};
+        let currentUtterance = null; 
+        let lastErrorKeySpokenTimestamps = {}; 
+        const ERROR_KEY_REANNOUNCE_COOLDOWN = 4000;
 
-        // ----- Constants & MP_LANDMARKS -----
-        const KNEE_ANGLE_STANDING = 165; // Slightly higher for more clear "standing"
+       
+        const KNEE_ANGLE_STANDING = 165; 
         const KNEE_ANGLE_BENT_ENOUGH_FOR_SQUAT = 130; 
-        const KNEE_ANGLE_VERY_DEEP = 80; // Adjusted for squat depth
-        const HIP_DIP_BELOW_KNEE_THRESHOLD_Y = 1.02; // Hips Y should be > Knee Y * this (Y is inverted)
-        const MIN_VISIBILITY = 0.7; // Stricter visibility
+        const KNEE_ANGLE_VERY_DEEP = 80; 
+        const HIP_DIP_BELOW_KNEE_THRESHOLD_Y = 1.02; 
+        const MIN_VISIBILITY = 0.7; 
         const MP_LANDMARKS = {
             NOSE: 0, LEFT_EYE_INNER: 1, LEFT_EYE: 2, LEFT_EYE_OUTER: 3, RIGHT_EYE_INNER: 4, RIGHT_EYE: 5, RIGHT_EYE_OUTER: 6,
             LEFT_EAR: 7, RIGHT_EAR: 8, MOUTH_LEFT: 9, MOUTH_RIGHT: 10,
@@ -428,7 +428,7 @@
             LEFT_HEEL: 29, RIGHT_HEEL: 30, LEFT_FOOT_INDEX: 31, RIGHT_FOOT_INDEX: 32
         };
 
-        // ----- Utility Functions -----
+        
         function calculateAngle(p1, p2, p3, checkVisibility = true) { 
             if (checkVisibility && (!p1 || !p2 || !p3 || p1.visibility < MIN_VISIBILITY || p2.visibility < MIN_VISIBILITY || p3.visibility < MIN_VISIBILITY)) {
                 return null; 
@@ -442,7 +442,7 @@
         }
         function getMidPoint(p1, p2, checkVisibility = true) {
             if (checkVisibility && (!p1 || !p2 || p1.visibility < MIN_VISIBILITY || p2.visibility < MIN_VISIBILITY)) return null;
-            if (!p1 || !p2) return null; // Still check even if visibility check is off, for safety
+            if (!p1 || !p2) return null; 
             return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2, z: (p1.z + p2.z) / 2, visibility: (p1.visibility + p2.visibility) / 2 };
         }
         function getDistance(p1, p2, checkVisibility = true) {
@@ -480,56 +480,50 @@
                 }
             }
         
-            // 2. Handle ongoing speech
+            
+
             if (synth.speaking) {
-                // If forced, or a critical message type, we need to interrupt.
                 if (forceSpeak || isRepCountMessage || isTimeOutMessage || isWorkoutOverMessage) {
-                    // Cancel all current and queued utterances.
                     synth.cancel();
-                    // Clear event handlers of the previous utterance to prevent them from firing unexpectedly
                     if (currentUtterance) {
                         currentUtterance.onend = null;
                         currentUtterance.onerror = null;
-                        currentUtterance = null; // Indicate it's no longer the active one we're managing
+                        currentUtterance = null; 
                     }
                 } else {
-                    // If already speaking and the new message is not forced (and not a special type),
-                    // don't interrupt the current speech.
+                    
                     return;
                 }
             }
         
-            // 3. Create and speak the new utterance
             currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
             currentUtterance.lang = 'ru-RU';
             const russianVoice = voices.find(voice => voice.lang === 'ru-RU');
             if (russianVoice) {
                 currentUtterance.voice = russianVoice;
             }
-            currentUtterance.rate = 0.95; // Slightly slower for clarity
+            currentUtterance.rate = 0.95;
             currentUtterance.pitch = 1.0;
         
             currentUtterance.onend = () => {
-                // console.log(`Speech ended: "${textToSpeak}"`);
+             
                 if (isRepCountMessage) {
                     lastSpokenMessageWasRepCount = true;
                 } else {
                     lastSpokenMessageWasRepCount = false;
                 }
-                // Check if this is still the utterance we expect to end
-                if (currentUtterance && currentUtterance.text === textToSpeak) {
+                 if (currentUtterance && currentUtterance.text === textToSpeak) {
                      currentUtterance = null;
                 }
             };
         
             currentUtterance.onerror = (event) => {
                 console.error('Ошибка синтеза речи:', event.error, `Текст: "${textToSpeak}"`);
-                lastSpokenMessageWasRepCount = false; // Reset on error
+                lastSpokenMessageWasRepCount = false;
                 if (currentUtterance && currentUtterance.text === textToSpeak) {
                     currentUtterance = null;
                 }
-                // Potentially try to cancel again if an error occurs, might help unstick the synth
-                // synth.cancel(); 
+               
             };
         
             try {
@@ -538,13 +532,12 @@
                 lastSpokenTime = currentTime;
             } catch (e) {
                 console.error("Исключение при вызове synth.speak:", e, `Текст: "${textToSpeak}"`);
-                if (currentUtterance) { // Clean up if speak fails immediately
+                if (currentUtterance) {
                     currentUtterance.onend = null;
                     currentUtterance.onerror = null;
                     currentUtterance = null;
                 }
-                // Attempt to reset synth state
-                synth.cancel();
+               synth.cancel();
             }
         }
 
@@ -594,8 +587,8 @@
             if (essentialGeneralLandmarks.some(p => !p || p.visibility < MIN_VISIBILITY)) {
                 feedbackMessages.push({ key: "visibility_generic", text: "Тело плохо видно. Убедитесь, что вы полностью в кадре и хорошо освещены.", severity: "Red" });
                 speechMessage = "Вас плохо видно! Пожалуйста, поправьте камеру или освещение.";
-                speechPriority = 1; // Critical
-                lastLandmarks = lm.map(landmark => ({...landmark})); // Update lastLandmarks before returning
+                speechPriority = 1; 
+                lastLandmarks = lm.map(landmark => ({...landmark})); 
                 return { feedbackMessages, speechMessage, speechPriority, reps_done_this_frame: 0 };
             }
 
@@ -647,7 +640,7 @@
                              totalDisplacement += getDistance(lm[idx], lastLandmarks[idx], false);
                         }
                     }
-                    if (totalDisplacement < 0.02 && !activityDetected) { inactivityCounter++; } else { inactivityCounter = 0; } // Lower threshold for inactivity if no specific activity detected
+                    if (totalDisplacement < 0.02 && !activityDetected) { inactivityCounter++; } else { inactivityCounter = 0; } 
                     if (inactivityCounter > INACTIVITY_THRESHOLD_FRAMES) {
                         feedbackMessages.push({ text: "Двигайтесь активнее!", severity: "Orange" });
                         speechMessage = "Старайтесь двигаться активнее!"; speechPriority = 2; inactivityCounter = 0;
@@ -668,7 +661,7 @@
                     }
                     const shoulderWidth = getDistance(lShoulder, rShoulder);
                     const ankleWidth = getDistance(lAnkle, rAnkle);
-                    if (shoulderWidth && ankleWidth && ankleWidth < shoulderWidth * 1.1) { // Ankles not significantly wider than shoulders
+                    if (shoulderWidth && ankleWidth && ankleWidth < shoulderWidth * 1.1) { 
                         feedbackMessages.push({ text: "Разводите ноги шире в прыжке!", severity: "Orange" });
                         if (speechPriority > 2) { speechMessage = "Ноги шире!"; speechPriority = 2;}
                     }
@@ -786,10 +779,10 @@
                 // --- Head Position (Neck Alignment) ---
                 const nose = lm[MP_LANDMARKS.NOSE];
                 if (nose && nose.visibility >= MIN_VISIBILITY && midShoulder && midHip && midShoulder.visibility >= MIN_VISIBILITY && midHip.visibility >= MIN_VISIBILITY &&
-                    (inRepCycle || isCurrentlyDeep || isCurrentlyStanding)) { // Check head position throughout the movement phases
-                    const shoulderHipDistY = Math.abs(midShoulder.y - midHip.y) || bodyHeightApprox * 0.3; // Fallback for distance
-                    const headDropThreshold = shoulderHipDistY * 0.20; // How much nose.y can be > midShoulder.y (looking down)
-                    const headUpThreshold = shoulderHipDistY * 0.15;   // How much nose.y can be < midShoulder.y (looking up)
+                    (inRepCycle || isCurrentlyDeep || isCurrentlyStanding)) {
+                    const shoulderHipDistY = Math.abs(midShoulder.y - midHip.y) || bodyHeightApprox * 0.3; 
+                    const headDropThreshold = shoulderHipDistY * 0.20; 
+                    const headUpThreshold = shoulderHipDistY * 0.15;   
 
                     if (nose.y > midShoulder.y + headDropThreshold) { 
                         FLAG_ERROR("head_down_squat", "Не опускайте голову, смотрите вперед или немного вниз.", "Orange");
@@ -867,15 +860,12 @@
                             speechPriority = 3;
                         }
                     } else {
-                        // Errors occurred, specific feedback would have been flagged.
-                        // Speech will be handled by the error prioritization below.
-                    }
+                       }
                     reps_done_this_frame = 1;
                     inRepCycle = false;
                 }
             }
             
-            // Determine final speechMessage based on priority of flagged errors
             const redError = feedbackMessages.find(fb => fb.key === primaryErrorKey && fb.severity === "Red");
             const orangeError = feedbackMessages.find(fb => fb.key === primaryErrorKey && fb.severity === "Orange");
 
@@ -968,9 +958,7 @@
                             handleExerciseTargetMet();
                         }
                     } else if (analysisResult.reps_done_this_frame === 0 && currentExerciseConfig.type === 'rep_based') {
-                        // If not a rep, ensure lastSpokenMessageWasRepCount is false, so form feedback can come through
-                        // This might be too aggressive if speak() itself sets it for non-rep messages.
-                        // The speak() function's onend handler should correctly set this.
+                    
                     }
                 }
             } else {
@@ -1088,7 +1076,7 @@
             aiFeedbackArea.innerHTML = "<p>Тренировка прервана.</p>"; currentExerciseIndex = -1; 
         }
 
-        // ----- Event Listeners -----
+        
         mainControlButton.addEventListener('click', () => {
             if (!isWorkoutActive) { startWorkoutRoutine(); } 
             else { 
