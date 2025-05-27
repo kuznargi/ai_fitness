@@ -70,23 +70,23 @@
         }
       
         .highlight-good {
-          color: #198754; /* Bootstrap green */
+          color: #198754;
           font-weight: 700;
         }
       
         .highlight-improve {
-          color: #fd7e14; /* Bootstrap orange */
+          color: #fd7e14;
           font-weight: 700;
         }
       
         .highlight-excellent {
-          color: #0d6efd; /* Bootstrap blue */
+          color: #0d6efd; 
           font-weight: 700;
         }
       
         .error-count {
           font-weight: 700;
-          color: #dc3545; /* Bootstrap red */
+          color: #dc3545;
         }
       
         .actions {
@@ -227,7 +227,7 @@
             document.getElementById('correct-reps').textContent = workoutAnalysis.correctReps || 0;
 
             const errorsListEl = document.getElementById('errors-list');
-            errorsListEl.innerHTML = ''; // Clear placeholder
+            errorsListEl.innerHTML = ''; 
             let totalErrorFrames = 0;
             let hasCriticalErrors = false;
             for (const errorType in workoutAnalysis.errors) {
@@ -236,21 +236,19 @@
                     const li = document.createElement('li');
                     li.innerHTML = `${errorDescriptions[errorType] || errorType}: <span class="error-count">${count}</span>`;
                     errorsListEl.appendChild(li);
-                    if (errorType !== 'visibilityIssue') { // Don't count visibility as a form error for overall eval
+                    if (errorType !== 'visibilityIssue') {
                         totalErrorFrames += count;
-                        if(count > 5) hasCriticalErrors = true; // Arbitrary threshold for critical impact
-                    }
+                        if(count > 5) hasCriticalErrors = true; 
+                      }
                 }
             }
             if (errorsListEl.children.length === 0) {
                 errorsListEl.innerHTML = '<li>Ошибок не зафиксировано. Отлично!</li>';
             }
 
-            // Calculate and display calories (very basic)
-            const caloriesBurned = (workoutAnalysis.correctReps || 0) * 5; // Example: 5 calories per correct rep
+            const caloriesBurned = (workoutAnalysis.correctReps || 0) * 5;
             document.getElementById('calories-burned').textContent = caloriesBurned + ' ккал';
 
-            // Determine Overall Evaluation
             const overallEvaluationEl = document.getElementById('overall-evaluation');
             let evaluationText = "Требует улучшения";
             let evaluationClass = "highlight-improve";
@@ -260,7 +258,7 @@
                 if (correctPercentage >= 90 && !hasCriticalErrors) {
                     evaluationText = "Отлично!";
                     evaluationClass = "highlight-excellent";
-                } else if (correctPercentage >= 70 && totalErrorFrames < workoutAnalysis.totalReps * 2) { // Allow some error frames
+                } else if (correctPercentage >= 70 && totalErrorFrames < workoutAnalysis.totalReps * 2) { 
                     evaluationText = "Хорошо";
                     evaluationClass = "highlight-good";
                 }
@@ -271,31 +269,27 @@
             overallEvaluationEl.textContent = evaluationText;
             overallEvaluationEl.className = evaluationClass;
 
-            // Setup "Back to Dashboard" button
             const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
             const userProfileParams = localStorage.getItem('lastUserProfileParams');
             if (backToDashboardBtn && userProfileParams) {
                 backToDashboardBtn.addEventListener('click', function() {
                     window.location.href = "{% url 'program_dashboard' %}?" + userProfileParams;
                 });
-                // localStorage.removeItem('lastUserProfileParams'); // Optional: remove after use if not needed elsewhere
             } else if (backToDashboardBtn) {
-                 backToDashboardBtn.addEventListener('click', function() { // Fallback if no params
+                 backToDashboardBtn.addEventListener('click', function() {
                     window.location.href = "{% url 'program_dashboard' %}";
                 });
             }
             
-            // Old feedback/tips logic - can be removed or updated if new dynamic feedback is generated
             const feedbackListOldEl = document.getElementById('feedback-list-old');
             const tipsListOldEl = document.getElementById('tips-list-old');
             if(feedbackListOldEl) feedbackListOldEl.innerHTML = '<li>Старая система обратной связи будет обновлена.</li>';
             if(tipsListOldEl) tipsListOldEl.innerHTML = '<li>Советы будут генерироваться на основе ваших ошибок.</li>';
         });
 
-        function navigateToGoalSelection() { // For "New Workout (other goals)" button
+        function navigateToGoalSelection() { 
             window.location.href = "{% url 'select_goal' %}"; 
         }
-        // navigateToHome is no longer used directly by a button with that ID
     </script>
 </body>
 </html> 

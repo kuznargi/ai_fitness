@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -160,7 +161,7 @@
 <body>
     <div class="container">
         <h1>Заполните ваш фитнес-профиль</h1>
-        <form action="{% url 'select_goal' %}" method="post">
+        <form action="/select-goal/" method="post">
             {% csrf_token %}
             
             <label for="goal">Ваша основная цель:</label>
@@ -217,7 +218,10 @@
     <script>
         const otherHealthTrigger = document.getElementById('med_other_text_trigger');
         const otherHealthDetails = document.getElementById('other_health_condition_details');
+    
         if (otherHealthTrigger && otherHealthDetails) {
+            otherHealthDetails.style.display = 'none';
+    
             otherHealthTrigger.addEventListener('change', function() {
                 if (this.checked) {
                     otherHealthDetails.style.display = 'block';
@@ -229,5 +233,6 @@
             });
         }
     </script>
+    
 </body>
 </html> 

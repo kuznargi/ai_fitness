@@ -79,3 +79,15 @@ def program_dashboard_view(request):
     }
     # print("Dashboard Context:", context) # For debugging if needed
     return render(request, 'program_dashboard.html', context)
+
+from django.http import HttpResponse
+
+def program_dashboard_view(request):
+    context = {
+        'goal': request.GET.get('goal'),
+        'fitness_level': request.GET.get('fitness_level'),
+        'health_conditions': request.GET.get('health_conditions'),
+        'workout_frequency': request.GET.get('workout_frequency'),
+        'preferred_exercises': request.GET.get('preferred_exercises'),
+    }
+    return render(request, 'program_dashboard.html', context)

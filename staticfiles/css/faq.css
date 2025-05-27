@@ -1,0 +1,153 @@
+.faq {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+    
+
+}
+
+.ques {
+    max-width: 800px;
+    width: 100%;
+    display: grid;
+    gap: 2rem;
+}
+
+.ques .title {
+    font-family: Poppins;
+    font-size: 3rem;
+   color:#00bfff;
+    margin: 3rem auto;
+    text-align: center;
+}
+
+.question {
+    background-color: #fff;
+    color: #222;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease;
+}
+
+.question:hover {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+}
+
+.question-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2.5rem 1.5rem;
+    gap: 1.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.question-title h4 {
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.question-toggle {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #00bfff;
+    display: flex;
+    align-items: center;
+}
+
+.question .close {
+    display: none;
+}
+
+.question .open {
+    display: block;
+}
+
+.question-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+    padding: 0 1.5rem;
+}
+
+.question-content .text {
+    font-size: 1.6rem;
+    padding: 0;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.question.active .question-content {
+    max-height: 500px;
+    padding: 0 1.5rem 2rem 1.5rem;
+}
+
+.question.active .open {
+    display: none;
+}
+
+.question.active .close {
+    display: block;
+}
+
+@media screen and (max-width: 768px) {
+  .faq {
+    padding: 1rem;
+    min-height: auto;
+  }
+
+  .ques {
+    max-width: 100%;
+    gap: 1.5rem;
+  }
+
+  .ques .title {
+    font-size: 2.4rem;
+    margin: 2rem auto;
+  }
+
+  .question-title {
+    padding: 1.8rem 1rem;
+    gap: 1rem;
+  }
+
+  .question-title h4 {
+    font-size: 1.4rem;
+  }
+
+  .question-toggle {
+    font-size: 2rem;
+  }
+
+  .question-content .text {
+    font-size: 1.3rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ques .title {
+    font-size: 1.8rem;
+    margin: 1.5rem auto;
+  }
+
+  .question-title {
+    padding: 1.2rem 1rem;
+    gap: 0.8rem;
+  }
+
+  .question-title h4 {
+    font-size: 1.1rem;
+  }
+
+  .question-toggle {
+    font-size: 1.6rem;
+  }
+
+  .question-content .text {
+    font-size: 1.1rem;
+  }
+}
